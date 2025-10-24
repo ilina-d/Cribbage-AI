@@ -3,7 +3,7 @@ from os import system as sys_call
 
 
 class Display:
-    """ Visualizing the game space in the terminal. """
+    """ Visualizing the game flow in the terminal. """
 
 
 __all__ = ['Display']

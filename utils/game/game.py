@@ -3,20 +3,21 @@ import time
 
 from utils.assets import Display
 from utils.players import BasePlayer, UserPlayer
-from utils.helpers import CardDeck, State
+from utils.helpers import CardDeck
+from utils.helpers import Scoring
 
 
 class Game:
     """ Cribbage game logic and flow. """
 
+    state: dict[str, ...] = None
     card_deck: CardDeck = None
     dealers_crib: list[str] = None
-    state: State = None
     called_go: bool = False
-    current_crib: int = 0
+
 
     def __init__(self, player1: BasePlayer, player2: BasePlayer, visuals: bool = True,
-                 wait_after_move: int | str | None = 'input',) -> None:
+                 wait_after_move: int | str | None = 'input') -> None:
         """
         Create and initialize an instance of the Game class.
 
@@ -52,60 +53,79 @@ class Game:
         self.visuals = visuals
         self.display = Display()
 
-        def waiting(start_time: float = None):
+        def wait_func():
             if wait_after_move is None:
                 return
             if wait_after_move == 'input':
                 input('... waiting for input ...')
                 return
-            if start_time:
-                if time.time() - start_time <= wait_after_move:
-                    time.sleep(int(wait_after_move - (time.time() - start_time)) / 1000)
-                return
-            else:
-                time.sleep(wait_after_move / 1000)
-        self.wait_after_move = waiting
+            time.sleep(wait_after_move / 1000)
+        self.wait_after_move = wait_func
 
         self.reset_game()
 
 
-    def prepare_new_round(self):
-        """ Prepare the game state for a new round. """
-
-        if not self.state.dealer:
-            self.state.dealer = random.choice([self.player1, self.player2])
-        else:
-            self.state.dealer = self.player1 if self.state.dealer == self.player2 else self.player2
-
-        self.state.cribs = [[], [], []]
-        self.state.starter_card = None
-        self.dealers_crib = []
-
-        self.card_deck = CardDeck(shuffle=True)
-        self.player1.cards = self.card_deck.deal_cards(6)
-        self.player2.cards = self.card_deck.deal_cards(6)
-
-        self.called_go = False
-        self.current_crib = 0
-
-
-    def reset_game(self):
+    def reset_game(self) -> None:
         """ Reset the game state to its starting form and clear all player data. """
 
-        self.state = State()
-        self.card_deck = CardDeck(shuffle=True)
+        self.state = {
+            'cribs' : [[], [], []],
+            'current_crib_idx' : 0,
+            'crib_sums': [0, 0, 0],
+            'starter_card': None,
+            'dealer' : random.choice([self.player1, self.player2]),
+            'player1' : self.player1,
+            'player2' : self.player2
+        }
+
         self.dealers_crib = []
 
+        self.card_deck = CardDeck(shuffle = True)
         self.player1.cards = []
         self.player2.cards = []
 
         self.called_go = False
-        self.current_crib = 0
+
+
+    def prepare_new_round(self) -> None:
+        """ Prepare the game state for a new round. """
+
+        self.state['cribs'] = [[], [], []]
+        self.state['current_crib_idx'] = 0
+        self.state['crib_sums'] = [0, 0, 0]
+        self.state['starter_card'] = None
+        self.state['dealer'] = self.player1 if self.state['dealer'] == self.player2 else self.player2
+        self.dealers_crib = []
+
+        self.card_deck = CardDeck(shuffle = True)
+        self.player1.cards = self.card_deck.deal_cards(6)
+        self.player2.cards = self.card_deck.deal_cards(6)
+
+        self.called_go = False
+
+
+    def check_win(self) -> BasePlayer | None:
+        """
+        Check if there is a winner in the current game state.
+
+        ------
+
+        Returns:
+            The winning player or None if there is no winner yet.
+        """
+
+        if self.player1.points >= 121:
+            return self.player1
+
+        if self.player2.points >= 121:
+            return self.player2
+
+        return None
 
 
     def discard_cards(self, player: BasePlayer) -> None:
         """
-        Update the game state based on player's discarded cards.
+        Update the game state based on the player's move during the Discard phase.
 
         ------
 
@@ -114,13 +134,12 @@ class Game:
         """
 
         discarded_cards = player.discard_cards(self.state)
-
         self.dealers_crib.extend(discarded_cards)
 
 
     def play_card(self, player: BasePlayer) -> None:
         """
-        Update the game state based on player's played card.
+        Update the game state based on the player's move during the Play phase.
 
         ------
 
@@ -132,36 +151,21 @@ class Game:
 
         if played_card == "GO":
             if self.called_go:
-                self.current_crib += 1
+                self.state['current_crib_idx'] += 1
                 self.called_go = False
             else:
                 self.called_go = True
-                # score go for other player
+                Scoring.score_go(self.state, player, update_points = True)
             return
 
-        self.state.cribs[self.current_crib].append(played_card)
+        current_crib_idx = self.state['current_crib_idx']
+        self.state['cribs'][current_crib_idx].append(played_card)
+        Scoring.score_card(self.state, player, update_points = True)
 
-        # score played card
-        # if crib score of current_crib is 31, current_crib +=1 and set called_go to false!!!!!
-
-
-    def score_hand(self, player: BasePlayer) -> int:
-        """
-        Score cards at the end of the round for the given player.
-
-        ------
-
-        Arguments:
-            player: The player whose hand is being scored.
-
-        ------
-
-        Returns:
-            The score of the players hand with the current starter card.
-        """
-
-        # score player
-        pass
+        self.state['crib_sums'][current_crib_idx] += CardDeck.get_card_worth(played_card)
+        if self.state['crib_sums'][current_crib_idx] == 31:
+            self.state['current_crib_idx'] += 1
+            self.called_go = False
 
 
     def play(self) -> None:
@@ -172,47 +176,65 @@ class Game:
 
         while winner is None:
             self.prepare_new_round()
+            dealer = self.state['dealer']
+            non_dealer = self.player1 if dealer == self.player2 else self.player2
 
-            # discard phase
+            # DISCARD PHASE
             self.discard_cards(self.player1)
+            if not isinstance(self.player1, UserPlayer):
+                self.wait_after_move()
+
             self.discard_cards(self.player2)
+            self.wait_after_move()
 
             self.state.starter_card = self.card_deck.deal_cards(1)[0]
 
-            # calc hand score + starter card
-            hand_score_dealer = self.score_hand(self.state.dealer)
-            hand_score_non_dealer = \
-                self.score_hand(self.player1) if self.player2 == self.state.dealer else self.score_hand(self.player2)
+            Scoring.score_heels(self.state, update_points = True)
 
-            # play phase
-            current_player = self.player1 if self.state.dealer == self.player2 else self.player2
+            # PRE-CALCULATION FOR THE SHOW PHASE
+            hand_score_dealer = Scoring.score_hand(self.state, dealer, update_points = False)
+            hand_score_non_dealer = Scoring.score_hand(self.state, non_dealer, update_points = False)
+
+            # PLAY PHASE
+            current_player = non_dealer
 
             while self.player1.cards or self.player2.cards:
                 prev_called_go = self.called_go
                 self.play_card(current_player)
 
-                winner = self.state.check_win()
+                if not isinstance(current_player, UserPlayer):
+                    self.wait_after_move()
+
+                winner = self.check_win()
                 if winner:
                     break
 
                 if not (self.called_go and self.called_go == prev_called_go):
                     current_player = self.player1 if current_player == self.player2 else self.player2
 
-            # show phase
-            dealer_idx, non_dealer_idx = (0, 1) if self.player1 == self.state.dealer else (1, 0)
+            # SHOW PHASE
+            non_dealer.points += hand_score_non_dealer
+            self.wait_after_move()
 
-            self.state.points[non_dealer_idx] += hand_score_non_dealer
-            winner = self.state.check_win()
+            winner = self.check_win()
             if winner:
                 break
 
-            self.state.points[dealer_idx] += hand_score_dealer
-            winner = self.state.check_win()
+            dealer += hand_score_dealer
+            self.wait_after_move()
+
+            winner = self.check_win()
             if winner:
                 break
 
-        # game end
-        print('game end ')
+            Scoring.score_crib(self.state, self.dealers_crib, update_points = True)
+            self.wait_after_move()
+
+            winner = self.check_win()
+            if winner:
+                break
+
+        # GAME END
 
 
 __all__ = ['Game']
