@@ -6,7 +6,7 @@ class CardDeck:
 
     CARD_RANKS = '123456789TJQK'
     CARD_SUITS = 'SDCH'
-    CARD_EMOJIS = '♠️♦️♣️♥️'
+    CARD_EMOJIS = '♠♦♣♥'
 
 
     def __init__(self, shuffle: bool = True) -> None:

@@ -5,26 +5,26 @@
 ✅ | TODO.md
 ❌ | requirements.txt
 ⬛ |
-❌ | utils/
+🔄 | utils/
 ⬛ |-|
 ❌ |-| assets/ 
-❌ |-|-| __init__.py
-❌ |-|-| display.py
+🔄 |-|-| __init__.py
+🔄 |-|-| display.py
 ⬛ |-|
 ❌ |-| game/
-❎ |-|-| __init__.py
-❎ |-|-| game.py
-❌ |-|-| ...
+🔄 |-|-| __init__.py
+🔄 |-|-| game.py
 ⬛ |-|
 ❌ |-| helpers/
-❎ |-|-| __init__.py
-❎ |-|-| card_deck.py
-✅ |-|-| scoring.py
+🔄 |-|-| __init__.py
+🔄 |-|-| card_deck.py
+🔄 |-|-| scoring.py
 ⬛ |-|
-❌ |-| players/
-❌ |-|-| __init__.py
-❌ |-|-| base_player.py
-❌ |-|-| user_player.py
+🔄 |-| players/
+✅ |-|-| __init__.py
+✅ |-|-| base_player.py
+✅ |-|-| user_player.py
+✅ |-|-| random_player.py
 ❌ |-|-| ...
 ⬛ |-|
 ❌ |-| simulator/
@@ -37,8 +37,19 @@
 
 ---
 # TODO
-- Fix the Display.
-- Test game flow.
+- Fix `Scoring.score_run()` sometimes finding runs where there aren't any.
+- Finish implementing the `visuals` toggle for `Game`:
+  Add it as an argument in `Display` where the `print()` function would have a
+  check for the `visuals` argument, instead of having multiple if-statements in
+  `Game` for every time we print the game interface.
+- Add a `clear` argument to `Display.print()` as to remove constant calls to
+  `clear()` and `print()`.
+- Fix `Display` issues when waiting for `UserPlayer` input.
+- Update `Display` to show the crib when it is being scored during the show phase.
+- Update `Display` to show `state['crib_sums']`.
+- Update `Display` to show a hat next to the dealer before the discard phase.
+- Clean up the code in Display and Game.
+- Continue testing game flow.
 - ...
 
 ---
@@ -47,11 +58,16 @@
 
 ---
 # Latest Changes
-Implemented player modules and started working on the game visuals.
+Minor adjustments and fixes, mainly to `Display`.
 
-- Implemented missing `BasePlayer` functionality and docstrings.
-- Implemented `UserPlayer` class.
-- Implemented `RandomPlayer` class.
-- Started implementation of the `Display` class.
-- Updated the `Game` class with display and player logic.
+- Adjustments and bug fixes to `Display`:
+  - Fixed positions for cards in the players' hands.
+  - Adjusted positions for other interface elements.
+  - Fixed game interface blinking issue.
+  - Fixed position of played cards when a new round starts.
+  - Fixed game interface not showing points properly.
+  - Fixed program crashing when attempting to draw the last played card.
+- Added missing `Display` function calls in `Game`.
+- Fixed some scoring issues in `Game`.
+- Added hints to `UserPlayer` when waiting for input.
 - Updated TODO.

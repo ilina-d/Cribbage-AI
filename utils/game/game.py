@@ -51,7 +51,7 @@ class Game:
                 raise Exception("Both players cannot be a UserPlayer instance.")
             self.player1, self.player2 = player2, player1
 
-        self.visuals = visuals # lol jk
+        self.visuals = visuals  # lol jk
         self.display = Display(self.player1, self.player2, show_opponents_hand)
 
         def wait_func():
@@ -107,6 +107,8 @@ class Game:
         self.called_go = False
 
         self.display.clear(clear_matrix=True)
+        self.display.update_points(self.state, self.player1)
+        self.display.update_points(self.state, self.player2)
         self.display.update_hand(self.state, self.player1)
         self.display.update_hand(self.state, self.player2)
         self.display.print(show_board=True)
@@ -172,16 +174,19 @@ class Game:
                 self.display.print(show_board=True)
             else:
                 self.called_go = True
-                Scoring.score_go(self.state, player, update_points = True)
-
+                score, tricks_info = Scoring.score_go(self.state, player, update_points = True)
+                other_player = self.player1 if player == self.player2 else self.player2
+                self.display.update_points(self.state, other_player)
                 self.display.update_play(self.state, player, option="stay")
                 self.display.clear(clear_matrix=False)
-                self.display.print(show_board=True)
+                self.display.print(tricks_info=tricks_info, show_board=True)
             return
 
         current_crib_idx = self.state['current_crib_idx']
         self.state['cribs'][current_crib_idx].append(played_card)
-        Scoring.score_card(self.state, player, update_points = True)
+
+        score, tricks_info = Scoring.score_card(self.state, player, update_points = True)
+        self.display.update_points(self.state, player)
 
         self.state['crib_sums'][current_crib_idx] += CardDeck.get_card_worth(played_card)
         if self.state['crib_sums'][current_crib_idx] == 31:
@@ -190,11 +195,11 @@ class Game:
 
             self.display.update_play(self.state, player, option="next_crib_31")
             self.display.clear(clear_matrix=False)
-            self.display.print(show_board=True)
+            self.display.print(tricks_info = tricks_info, show_board=True)
         else:
             self.display.update_play(self.state, player, option="next_card")
             self.display.clear(clear_matrix=False)
-            self.display.print(show_board=True)
+            self.display.print(tricks_info = tricks_info, show_board=True)
 
 
     def play(self) -> None:
@@ -207,8 +212,6 @@ class Game:
             self.prepare_new_round()
             dealer = self.state['dealer']
             non_dealer = self.player1 if dealer == self.player2 else self.player2
-
-            self.display.print(show_board=True)
 
             # DISCARD PHASE
             self.discard_cards(self.player1)
@@ -224,15 +227,15 @@ class Game:
             self.display.clear(clear_matrix=False)
             self.display.print(show_board=True)
 
-            Scoring.score_heels(self.state, update_points = True)
+            _, tricks_info = Scoring.score_heels(self.state, update_points = True)
 
             self.display.update_points(self.state, dealer)
             self.display.clear(clear_matrix=False)
-            self.display.print(show_board=True)
+            self.display.print(tricks_info = tricks_info, show_board=True)
 
             # PRE-CALCULATION FOR THE SHOW PHASE
-            hand_score_dealer = Scoring.score_hand(self.state, dealer, update_points = False)
-            hand_score_non_dealer = Scoring.score_hand(self.state, non_dealer, update_points = False)
+            hand_score_dealer, hand_score_dealer_info = Scoring.score_hand(self.state, dealer, update_points = False)
+            hand_score_non_dealer, hand_score_non_dealer_info = Scoring.score_hand(self.state, non_dealer, update_points = False)
 
             # PLAY PHASE
             current_player = non_dealer
@@ -241,8 +244,8 @@ class Game:
                 prev_called_go = self.called_go
                 self.play_card(current_player)
 
-                if not isinstance(current_player, UserPlayer):
-                    self.wait_after_move()
+                # if not isinstance(current_player, UserPlayer):
+                self.wait_after_move()
 
                 winner = self.check_win()
                 if winner:
@@ -253,20 +256,29 @@ class Game:
 
             # SHOW PHASE
             non_dealer.points += hand_score_non_dealer
+            self.display.update_points(self.state, non_dealer)
+            self.display.clear(clear_matrix=False)
+            self.display.print(tricks_info=hand_score_non_dealer_info, show_board=True)
             self.wait_after_move()
 
             winner = self.check_win()
             if winner:
                 break
 
-            dealer += hand_score_dealer
+            dealer.points += hand_score_dealer
+            self.display.update_points(self.state, dealer)
+            self.display.clear(clear_matrix=False)
+            self.display.print(tricks_info=hand_score_dealer_info, show_board=True)
             self.wait_after_move()
 
             winner = self.check_win()
             if winner:
                 break
 
-            Scoring.score_crib(self.state, self.dealers_crib, update_points = True)
+            _, crib_score_info = Scoring.score_crib(self.state, self.dealers_crib, update_points = True)
+            self.display.update_points(self.state, dealer)
+            self.display.clear(clear_matrix=False)
+            self.display.print(tricks_info=crib_score_info, show_board=True)
             self.wait_after_move()
 
             winner = self.check_win()
@@ -274,6 +286,7 @@ class Game:
                 break
 
         # GAME END
+        input('done :D')
 
 
 __all__ = ['Game']

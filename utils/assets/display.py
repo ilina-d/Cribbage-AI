@@ -8,7 +8,7 @@ from utils.players import BasePlayer, UserPlayer
 class Display:
     """ Visualizing the game flow in the terminal. """
 
-    WIDTH: int = 77
+    WIDTH: int = 99
     HEIGHT: int = 33
 
     PADDING: int = 3
@@ -19,18 +19,18 @@ class Display:
     DEALER_TOP: tuple[int, int] = (PADDING, PADDING)
     DEALER_BOTTOM: tuple[int, int] = (HEIGHT - PADDING - CARD_HEIGHT, PADDING)
 
-    HAND_TOP: tuple[int, int] = (PADDING, DEALER_TOP[1] + CARD_WIDTH)
-    HAND_BOTTOM: tuple[int, int] = (HEIGHT - PADDING - CARD_HEIGHT, DEALER_BOTTOM[1] + CARD_WIDTH)
+    HAND_TOP: tuple[int, int] = (PADDING, DEALER_TOP[1] + CARD_WIDTH * 2)
+    HAND_BOTTOM: tuple[int, int] = (HEIGHT - PADDING - CARD_HEIGHT, DEALER_BOTTOM[1] + CARD_WIDTH * 2)
 
-    STARTER_CARD: tuple[int, int] = (HEIGHT // 2 - 1, PADDING)
+    STARTER_CARD: tuple[int, int] = (HEIGHT // 2 - 2, PADDING)
 
     POINTS_TOP: tuple[int, int] = (CARD_HEIGHT, WIDTH - PADDING - 7)
-    POINTS_BOTTOM: tuple[int, int] = (HEIGHT - CARD_HEIGHT, WIDTH - PADDING - 7)
+    POINTS_BOTTOM: tuple[int, int] = (HEIGHT - CARD_HEIGHT - 1, WIDTH - PADDING - 7)
 
     PLAY_CARD_TOP: tuple[int, int] = (HAND_TOP[0] + 2 * CARD_HEIGHT, HAND_TOP[1])
     PLAY_CARD_BOTTOM: tuple[int, int] = (HAND_BOTTOM[0] - 2 * CARD_HEIGHT, HAND_BOTTOM[1])
 
-    current_card_pos: list[int, int] = list(PLAY_CARD_TOP)
+    current_card_pos: list[int] = list(PLAY_CARD_TOP)
 
 
     def __init__(self, player1: BasePlayer, player2: BasePlayer, show_opponents_hand: bool = False) -> None:
@@ -74,9 +74,9 @@ class Display:
 
         if clear_matrix:
             self.matrix = [[f'{Back.da_green} {Back.rs}' for _ in range(self.WIDTH)] for _ in range(self.HEIGHT)]
+            self.current_card_pos = list(self.PLAY_CARD_TOP)
 
         print('\033[H', end='')
-        print('\033[2J', end='')
 
 
     def print(self, tricks_info: list[str] = None, show_board: bool = False) -> None:
@@ -98,7 +98,10 @@ class Display:
             return
 
         for trick in tricks_info:
-            print(trick)
+            print(trick + ' ' * (60 - len(trick)))
+
+        for _ in range(10 - len(tricks_info)):
+            print(' ' * 60)
 
 
     def update_starter(self, state: dict[str, ...]) -> None:
@@ -163,12 +166,15 @@ class Display:
         if option == "stay":
             return
 
-        card_matrix = self.get_card_matrix(state["cribs"][state["current_crib_idx"]][-1])
-
         card_col = self.current_card_pos[1]
         card_row = self.PLAY_CARD_TOP[0] if player == state["player2"] else self.PLAY_CARD_BOTTOM[0]
 
         if option in ("next_card", "next_crib_31"):
+            if option == 'next_crib_31':
+                card_matrix = self.get_card_matrix(state['cribs'][state['current_crib_idx'] - 1][-1])
+            else:
+                card_matrix = self.get_card_matrix(state["cribs"][state["current_crib_idx"]][-1])
+
             for row in range(card_row, card_row + self.CARD_HEIGHT):
                 for col in range(card_col, card_col + self.CARD_WIDTH):
                     self.matrix[row][col] = card_matrix[row - card_row][col - card_col]
@@ -177,7 +183,7 @@ class Display:
 
         self.current_card_pos[1] = card_col + 1 + self.CARD_WIDTH
 
-        if option in ("next_crib_31", "next_crib_go"):
+        if option == "next_crib_31":
             self.current_card_pos[1] += 1 + self.CARD_WIDTH
 
 
@@ -225,12 +231,12 @@ class Display:
             player: The player who scored points.
         """
 
-        points = f'{Text.black}{player.points} pts{Text.rs}'
+        points = f'{player.points} pts'
 
         pts_row, pts_col = self.POINTS_TOP if player == state['player2'] else self.POINTS_BOTTOM
 
-        for col in range(pts_col, pts_col + self.CARD_WIDTH):
-            self.matrix[pts_row][col] = points[col - pts_col]
+        for col in range(pts_col, pts_col + len(points)):
+            self.matrix[pts_row][col] = f'{Back.da_green}{Text.li_yellow}{points[col - pts_col]}{Rest.all}'
 
 
     def get_card_matrix(self, card: str) -> list[list[str]]:
@@ -255,8 +261,8 @@ class Display:
 
         matrix = [[f'{Back.white} {Back.rs}' for _ in range(self.CARD_WIDTH)] for _ in range(self.CARD_HEIGHT)]
 
-        matrix[2][3] = f'{color}{rank}{Text.rs}'
-        matrix[0][1] = matrix[-1][-1] = f'{color}{suit}{Text.rs}'
+        matrix[2][3] = f'{Back.white}{color}{rank}{Rest.all}'
+        matrix[0][1] = matrix[-1][-2] = f'{Back.white}{color}{suit}{Rest.all}'
 
         return matrix
 

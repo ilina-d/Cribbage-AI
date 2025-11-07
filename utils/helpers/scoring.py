@@ -408,10 +408,13 @@ class Scoring:
             for run_len in range(cards_len, 2, -1):
 
                 unique_ranks = set()
-                for rank in cards_ranks[cards_len - run_len:]:
+                for rank in cards_ranks[:cards_len - run_len:-1]:
                     if rank in unique_ranks:
                         break
                     unique_ranks.add(rank)
+
+                if len(unique_ranks) < 3:
+                    break
 
                 if max(unique_ranks) - min(unique_ranks) == len(unique_ranks) - 1:
                     return run_len, [f'Run of {run_len} for {run_len}']
