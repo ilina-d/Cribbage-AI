@@ -19,7 +19,7 @@
 ❌ |-| helpers/
 ❎ |-|-| __init__.py
 ❎ |-|-| card_deck.py
-❎ |-|-| scoring.py
+✅ |-|-| scoring.py
 ⬛ |-|
 ❌ |-| players/
 ❌ |-|-| __init__.py
@@ -37,12 +37,8 @@
 
 ---
 # TODO
-- Implement BasePlayer.
-- Implement RandomPlayer.
-- Implement UserPlayer.
-- Implement very basic Display.
+- Fix the Display.
 - Test game flow.
-- Improve Display.
 - ...
 
 ---
@@ -51,19 +47,11 @@
 
 ---
 # Latest Changes
-Implemented scoring functionality and refactored the game state representation.
+Implemented player modules and started working on the game visuals.
 
-- Refactored the game state representation: 
-  - Removed the `State` helper module.
-  - Added a `state` dictionary to the `Game` module.
-  - Moved `current_crib` variable from `Game` to `Game.state`.
-  - Points are now stored in `BasePlayer`, rather than inside the state.
-  - Added `check_win` function to `Game`.
-  - Updated `Game` functions to work with the state representation changes.
-  - Fixed errors in the `BasePlayer` module caused by the state representation changes. 
-- Implemented missing `wait_after_move` functionality to the `Game` module.
-- Added separate functions to the `CardDeck` module for unpacking a card's rank, suit, and worth.
-- Added `Scoring` helper module for scoring different card combinations.
-  - Updated `Game` class with new `Scoring` functionality.
-- Minor changes to function names and docstrings.
+- Implemented missing `BasePlayer` functionality and docstrings.
+- Implemented `UserPlayer` class.
+- Implemented `RandomPlayer` class.
+- Started implementation of the `Display` class.
+- Updated the `Game` class with display and player logic.
 - Updated TODO.

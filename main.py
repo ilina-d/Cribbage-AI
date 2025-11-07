@@ -1,28 +1,9 @@
-import os
-from sty import fg as Text, bg as Back, rs as Rest
+from utils.assets import Display
+from utils.players import RandomPlayer, UserPlayer
+from utils.game import Game
 
+if __name__ == '__main__':
 
-os.system('')
+    game = Game(UserPlayer(), RandomPlayer())
 
-input()
-
-print(f'{Back.white}{Text.red} ♥     {Rest.all} ' * 6)
-print(f'{Back.white}{Text.red}       {Rest.all} ' * 6)
-print(f'{Back.white}{Text.red}   5   {Rest.all} ' * 6)
-print(f'{Back.white}{Text.red}       {Rest.all} ' * 6)
-print(f'{Back.white}{Text.red}     ♥ {Rest.all} ' * 6)
-print('\n\n')
-
-print(f'{Back.white}     {Rest.all}')
-print(f'{Back.white}{Text.red}  ♥  {Rest.all}')
-print(f'{Back.white}{Text.red}  5  {Rest.all}')
-print(f'{Back.white}     {Rest.all}\n\n')
-
-
-print(f'{Back.white}     {Rest.all}')
-print(f'{Back.white}{Text.black}  ♠  {Rest.all}')
-print(f'{Back.white}{Text.black}  K  {Rest.all}')
-print(f'{Back.white}     {Rest.all}\n\n')
-
-print('♣ ♦ ♠ ♥')
-input()
+    game.play()

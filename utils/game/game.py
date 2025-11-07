@@ -17,7 +17,7 @@ class Game:
 
 
     def __init__(self, player1: BasePlayer, player2: BasePlayer, visuals: bool = True,
-                 wait_after_move: int | str | None = 'input') -> None:
+                 wait_after_move: int | str | None = 'input', show_opponents_hand: bool = False) -> None:
         """
         Create and initialize an instance of the Game class.
 
@@ -42,6 +42,7 @@ class Game:
             player2: The second player object.
             visuals: Whether to display the game flow in the terminal.
             wait_after_move: The method for waiting after each move.
+            show_opponents_hand: Whether to reveal the opponents hand on the display.
         """
 
         self.player1, self.player2 = player1, player2
@@ -50,8 +51,8 @@ class Game:
                 raise Exception("Both players cannot be a UserPlayer instance.")
             self.player1, self.player2 = player2, player1
 
-        self.visuals = visuals
-        self.display = Display()
+        self.visuals = visuals # lol jk
+        self.display = Display(self.player1, self.player2, show_opponents_hand)
 
         def wait_func():
             if wait_after_move is None:
@@ -86,6 +87,8 @@ class Game:
 
         self.called_go = False
 
+        self.display.clear(clear_matrix=True)
+
 
     def prepare_new_round(self) -> None:
         """ Prepare the game state for a new round. """
@@ -98,10 +101,15 @@ class Game:
         self.dealers_crib = []
 
         self.card_deck = CardDeck(shuffle = True)
-        self.player1.cards = self.card_deck.deal_cards(6)
-        self.player2.cards = self.card_deck.deal_cards(6)
+        self.player1.cards = sorted(self.card_deck.deal_cards(6), key=lambda card: self.card_deck.get_card_rank(card))
+        self.player2.cards = sorted(self.card_deck.deal_cards(6), key=lambda card: self.card_deck.get_card_rank(card))
 
         self.called_go = False
+
+        self.display.clear(clear_matrix=True)
+        self.display.update_hand(self.state, self.player1)
+        self.display.update_hand(self.state, self.player2)
+        self.display.print(show_board=True)
 
 
     def check_win(self) -> BasePlayer | None:
@@ -136,6 +144,11 @@ class Game:
         discarded_cards = player.discard_cards(self.state)
         self.dealers_crib.extend(discarded_cards)
 
+        self.display.update_hand(self.state, player)
+        self.display.update_crib(self.state)
+        self.display.clear(clear_matrix=False)
+        self.display.print(show_board=True)
+
 
     def play_card(self, player: BasePlayer) -> None:
         """
@@ -153,9 +166,17 @@ class Game:
             if self.called_go:
                 self.state['current_crib_idx'] += 1
                 self.called_go = False
+
+                self.display.update_play(self.state, player, option="next_crib_go")
+                self.display.clear(clear_matrix=False)
+                self.display.print(show_board=True)
             else:
                 self.called_go = True
                 Scoring.score_go(self.state, player, update_points = True)
+
+                self.display.update_play(self.state, player, option="stay")
+                self.display.clear(clear_matrix=False)
+                self.display.print(show_board=True)
             return
 
         current_crib_idx = self.state['current_crib_idx']
@@ -166,6 +187,14 @@ class Game:
         if self.state['crib_sums'][current_crib_idx] == 31:
             self.state['current_crib_idx'] += 1
             self.called_go = False
+
+            self.display.update_play(self.state, player, option="next_crib_31")
+            self.display.clear(clear_matrix=False)
+            self.display.print(show_board=True)
+        else:
+            self.display.update_play(self.state, player, option="next_card")
+            self.display.clear(clear_matrix=False)
+            self.display.print(show_board=True)
 
 
     def play(self) -> None:
@@ -179,6 +208,8 @@ class Game:
             dealer = self.state['dealer']
             non_dealer = self.player1 if dealer == self.player2 else self.player2
 
+            self.display.print(show_board=True)
+
             # DISCARD PHASE
             self.discard_cards(self.player1)
             if not isinstance(self.player1, UserPlayer):
@@ -187,9 +218,17 @@ class Game:
             self.discard_cards(self.player2)
             self.wait_after_move()
 
-            self.state.starter_card = self.card_deck.deal_cards(1)[0]
+            self.state['starter_card'] = self.card_deck.deal_cards(1)[0]
+
+            self.display.update_starter(self.state)
+            self.display.clear(clear_matrix=False)
+            self.display.print(show_board=True)
 
             Scoring.score_heels(self.state, update_points = True)
+
+            self.display.update_points(self.state, dealer)
+            self.display.clear(clear_matrix=False)
+            self.display.print(show_board=True)
 
             # PRE-CALCULATION FOR THE SHOW PHASE
             hand_score_dealer = Scoring.score_hand(self.state, dealer, update_points = False)
