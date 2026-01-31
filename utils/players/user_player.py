@@ -6,44 +6,43 @@ class UserPlayer(BasePlayer):
 
     def discard_cards(self, state: dict[str, ...]) -> list[str]:
 
-        cards = []
+        valid_moves = list(range(1, 7))
 
         while True:
-            cards = input('Choose two cards to discard (rank-suit format):'
-                          '\n> ').split(' ')
+            idxs = input('Choose two indexes of cards to discard (1, 2, ...): \033[0J').strip().split(' ')
 
-            if len(cards) != 2:
-                print("Input must be two cards... 🙄")
+            if len(idxs) != 2 or idxs[0] == idxs[1] or not idxs[0].isdigit() or not idxs[1].isdigit():
+                print("Input must be two different indexes... 🙄", end = ' ')
                 continue
 
-            if cards[0] in self.cards and cards[1] in self.cards:
-                self.cards.remove(cards[0])
-                self.cards.remove(cards[1])
-                break
+            idx1, idx2 = int(idxs[0]), int(idxs[1])
 
-            print("Invalid choice... 🙄")
+            if idx1 < idx2:
+                idx1, idx2 = idx2, idx1
 
-        return cards
+            if idx1 in valid_moves and idx2 in valid_moves:
+                return [self.cards.pop(idx1 - 1), self.cards.pop(idx2 - 1)]
+
+            print("Invalid choice... 🙄", end=' ')
 
 
     def play_card(self, state: dict[str, ...]) -> str:
 
         valid_moves = self.get_valid_moves(state)
-        card = ''
+        valid_moves_len = len(valid_moves)
+
+        if valid_moves == ['GO']:
+            input('Only valid move is "GO", press enter to continue...\033[0J')
+            return "GO"
 
         while True:
-            card = input('Choose card from hand to play (rank-suit format) or "GO":'
-                         '\n> ')
+            idx = input('Choose the index of the card to play (1, 2, ...): \033[0J')
 
-            if card not in valid_moves:
-                print("Invalid choice... 🙄")
+            if not idx.isdigit() or int(idx) > valid_moves_len:
+                print("Invalid choice... 🙄", end = ' ')
                 continue
 
-            if card != "GO":
-                self.cards.remove(card)
-            break
-
-        return card
+            return self.cards.pop(int(idx) - 1)
 
 
 __all__ = ['UserPlayer']

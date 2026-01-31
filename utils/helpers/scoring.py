@@ -90,7 +90,7 @@ class Scoring:
         total_score += score
         tricks.extend(info)
 
-        score, info = Scoring.score_flush(hand, option = 'hand')
+        score, info = Scoring.score_flush(hand, state['starter_card'], option = 'hand')
         total_score += score
         tricks.extend(info)
 
@@ -140,7 +140,7 @@ class Scoring:
         total_score += score
         tricks.extend(info)
 
-        score, info = Scoring.score_flush(cards, option = 'crib')
+        score, info = Scoring.score_flush(crib, state['starter_card'], option = 'crib')
         total_score += score
         tricks.extend(info)
 
@@ -403,56 +403,61 @@ class Scoring:
             return 0, []
 
         cards_ranks = [CardDeck.get_card_rank(card) for card in cards]
+        cards_ranks.reverse()
 
         if option == 'play':
             for run_len in range(cards_len, 2, -1):
 
-                unique_ranks = set()
-                for rank in cards_ranks[:cards_len - run_len:-1]:
-                    if rank in unique_ranks:
-                        break
-                    unique_ranks.add(rank)
+                curr_ranks = cards_ranks[:run_len]
+                curr_ranks.sort()
 
-                if len(unique_ranks) < 3:
+                unique_cards = set(curr_ranks)
+                if len(unique_cards) <3:
                     break
+                if len(unique_cards) != run_len:
+                    continue
 
-                if max(unique_ranks) - min(unique_ranks) == len(unique_ranks) - 1:
+                if max(unique_cards) - min(unique_cards) == run_len - 1:
                     return run_len, [f'Run of {run_len} for {run_len}']
 
             return 0, []
 
-        cards_ranks.sort()
-        unique_ranks = list(set(cards_ranks))
+        unique_ranks = sorted(list(set(cards_ranks)))
         unique_ranks_len = len(unique_ranks)
-        if unique_ranks_len < 3:
+        if unique_ranks_len <3:
             return 0, []
+
+        run_names = ['Run', 'Double run', 'Triple run', 'Quadruple run']
 
         for run_len in range(unique_ranks_len, 2, -1):
             for start in range(unique_ranks_len - run_len + 1):
 
                 combo = unique_ranks[start: start + run_len]
                 if combo[-1] - combo[0] == run_len - 1:
+                    num_dups = sum([cards_ranks.count(rank) if cards_ranks.count(rank) > 1 else 0
+                                    for rank in combo]) or 1
+                    points = run_len * num_dups
                     run = ' '.join([card for card in cards if CardDeck.get_card_rank(card) in combo])
-                    num_duplicates = sum([cards_ranks.count(rank) - 1 for rank in combo]) + 1
-                    points = run_len * num_duplicates
-                    return points, [f'Run of {run_len} for {points} [{run}]']
+                    return points, [f'{run_names[num_dups - 1]} of {len(set(combo))} for {points} [{run}]']
 
         return 0, []
 
 
     @staticmethod
-    def score_flush(cards: list[str], option: str) -> tuple[int, list[str]]:
+    def score_flush(cards: list[str], starter_card: str, option: str) -> tuple[int, list[str]]:
         """
         Option "play": Does nothing.
 
-        Option "hand": Calculate score if all cards are of the same suit. Assumes there are 4 cards given.
+        Option "hand": Calculate score if all cards are of the same suit with an additional point if starter card
+                       also matches the suit.
 
-        Option "card": Calculate score if all cards are of the same suit. Assumes there are 5 cards given.
+        Option "crib": Calculate score if all cards and starter card are of the same suit.
 
         ------
 
         Arguments:
             cards: A sequence of cards in rank-suit format.
+            starter_card: The starter card.
             option: What is being scored ("play", "hand", "crib").
 
         ------
@@ -469,7 +474,10 @@ class Scoring:
 
         if unique_suits_len == 1:
             flush = ' '.join(cards)
-            return unique_suits_len, [f'Flush of {unique_suits_len} for {unique_suits_len} [{flush}]']
+            score = 5 if starter_card[1] in unique_suits else 4
+            if option == 'crib' and score != 5:
+                return 0, []
+            return score, [f'Flush of {score} for {score} [{flush}]']
 
         return 0, []
 

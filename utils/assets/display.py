@@ -1,5 +1,6 @@
 from sty import fg as Text, bg as Back, rs as Rest
 from os import system as sys_call
+import re
 
 from utils.helpers import CardDeck
 from utils.players import BasePlayer, UserPlayer
@@ -8,7 +9,7 @@ from utils.players import BasePlayer, UserPlayer
 class Display:
     """ Visualizing the game flow in the terminal. """
 
-    WIDTH: int = 99
+    WIDTH: int = 99 + 4 + 7
     HEIGHT: int = 33
 
     PADDING: int = 3
@@ -26,6 +27,8 @@ class Display:
 
     POINTS_TOP: tuple[int, int] = (CARD_HEIGHT, WIDTH - PADDING - 7)
     POINTS_BOTTOM: tuple[int, int] = (HEIGHT - CARD_HEIGHT - 1, WIDTH - PADDING - 7)
+
+    CRIB_SUM: tuple[int, int] = (STARTER_CARD[0] + 2, WIDTH - PADDING - 7)
 
     PLAY_CARD_TOP: tuple[int, int] = (HAND_TOP[0] + 2 * CARD_HEIGHT, HAND_TOP[1])
     PLAY_CARD_BOTTOM: tuple[int, int] = (HAND_BOTTOM[0] - 2 * CARD_HEIGHT, HAND_BOTTOM[1])
@@ -76,7 +79,7 @@ class Display:
             self.matrix = [[f'{Back.da_green} {Back.rs}' for _ in range(self.WIDTH)] for _ in range(self.HEIGHT)]
             self.current_card_pos = list(self.PLAY_CARD_TOP)
 
-        print('\033[H', end='')
+        print('\033[H', end = '')
 
 
     def print(self, tricks_info: list[str] = None, show_board: bool = False) -> None:
@@ -97,11 +100,10 @@ class Display:
         if tricks_info is None:
             return
 
-        for trick in tricks_info:
-            print(trick + ' ' * (60 - len(trick)))
+        print(f'\033[{self.HEIGHT + 1};0H\033[0J')
 
-        for _ in range(10 - len(tricks_info)):
-            print(' ' * 60)
+        for trick in tricks_info:
+            print(f'\033[2K{trick}')
 
 
     def update_starter(self, state: dict[str, ...]) -> None:
@@ -124,7 +126,7 @@ class Display:
                 self.matrix[row][col] = card_matrix[row - card_row][col - card_col]
 
 
-    def update_crib(self, state: dict[str, ...]) -> None:
+    def update_crib(self, state: dict[str, ...], hat: bool = False) -> None:
         """
         Update the terminal display after the dealer's crib is altered.
 
@@ -132,9 +134,10 @@ class Display:
 
         Arguments:
              state: The current state of the game.
+             hat: Whether to display a hat instead of a flipped card.
         """
 
-        card_matrix = self.get_flipped_card_matrix()
+        card_matrix = self.get_hat_matrix() if hat else self.get_flipped_card_matrix()
 
         card_row, card_col = self.DEALER_TOP if state['dealer'] == state['player2'] else self.DEALER_BOTTOM
 
@@ -186,6 +189,8 @@ class Display:
         if option == "next_crib_31":
             self.current_card_pos[1] += 1 + self.CARD_WIDTH
 
+        self.update_crib_sum(state)
+
 
     def update_hand(self, state: dict[str, ...], player: BasePlayer) -> None:
         """
@@ -220,6 +225,31 @@ class Display:
             card_col += 1 + self.CARD_WIDTH
 
 
+    def update_crib_reveal(self, state: dict[str, ...], dealers_crib: list[str]) -> None:
+        """
+        Update the terminal display to show dealer's crib being scored.
+
+        ------
+
+        Arguments:
+            state: The current state of the game.
+            dealers_crib: The cards in the dealer's crib.
+        """
+
+        self.update_crib(state, hat = True)
+
+        card_row, card_col = self.HAND_TOP if state["dealer"] == state["player2"] else self.HAND_BOTTOM
+
+        for card in dealers_crib:
+            card_matrix = self.get_card_matrix(card)
+
+            for row in range(card_row, card_row + self.CARD_HEIGHT):
+                for col in range(card_col, card_col + self.CARD_WIDTH):
+                    self.matrix[row][col] = card_matrix[row - card_row][col - card_col]
+
+            card_col += 1 + self.CARD_WIDTH
+
+
     def update_points(self, state: dict[str, ...], player: BasePlayer) -> None:
         """
         Update the terminal display after the player scores points.
@@ -237,6 +267,18 @@ class Display:
 
         for col in range(pts_col, pts_col + len(points)):
             self.matrix[pts_row][col] = f'{Back.da_green}{Text.li_yellow}{points[col - pts_col]}{Rest.all}'
+
+
+    def update_crib_sum(self, state: dict[str, ...]) -> None:
+        """ Update the terminal display after a card is added to the current crib. """
+
+        crib_sum = state['crib_sums'][state['current_crib_idx']]
+        crib_sum = f'{crib_sum:<2} sum'
+
+        sum_row, sum_col = self.CRIB_SUM
+
+        for col in range(sum_col, sum_col + len(crib_sum)):
+            self.matrix[sum_row][col] = f'{Back.da_green}{Text.li_yellow}{crib_sum[col - sum_col]}{Rest.all}'
 
 
     def get_card_matrix(self, card: str) -> list[list[str]]:
@@ -292,6 +334,34 @@ class Display:
         """
 
         return [[f'{Back.da_green} {Back.rs}' for _ in range(self.CARD_WIDTH)] for _ in range(self.CARD_HEIGHT)]
+
+
+    @staticmethod
+    def get_hat_matrix() -> list[list[str]]:
+        """
+        Get a hat in printable format.
+
+        ------
+
+         Returns:
+             A hat in a format ready for printing.
+        """
+
+        hat = '       \n' \
+              '  000  \n' \
+              '  000  \n' \
+              '1122211\n' \
+              '       '
+
+        symbols = {
+            ' ' : f'{Back.da_green} {Rest.all}',
+            '0' : f'{Back.black} {Rest.all}',
+            '1' : f'{Back.da_green}{Text.black}▄{Rest.all}',
+            '2' : f'{Back.white}{Text.black}▄{Rest.all}'
+        }
+
+        hat = [[symbols[char] for char in line] for line in hat.split('\n')]
+        return hat
 
 
 __all__ = ['Display']

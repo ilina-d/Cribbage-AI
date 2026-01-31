@@ -17,7 +17,8 @@ class Game:
 
 
     def __init__(self, player1: BasePlayer, player2: BasePlayer, visuals: bool = True,
-                 wait_after_move: int | str | None = 'input', show_opponents_hand: bool = False) -> None:
+                 wait_after_move: int | str | None = 'input', wait_after_info: bool = True,
+                 show_opponents_hand: bool = False) -> None:
         """
         Create and initialize an instance of the Game class.
 
@@ -42,6 +43,7 @@ class Game:
             player2: The second player object.
             visuals: Whether to display the game flow in the terminal.
             wait_after_move: The method for waiting after each move.
+            wait_after_info: Whether to wait for input after scoring is shown.
             show_opponents_hand: Whether to reveal the opponents hand on the display.
         """
 
@@ -54,14 +56,20 @@ class Game:
         self.visuals = visuals  # lol jk
         self.display = Display(self.player1, self.player2, show_opponents_hand)
 
-        def wait_func():
+        def wait_move():
             if wait_after_move is None:
                 return
             if wait_after_move == 'input':
                 input('... waiting for input ...')
                 return
             time.sleep(wait_after_move / 1000)
-        self.wait_after_move = wait_func
+        self.wait_after_move = wait_move
+
+        def wait_info():
+            if not wait_after_info:
+                return
+            input('... waiting for input ...')
+        self.wait_after_info = wait_info
 
         self.reset_game()
 
@@ -109,8 +117,10 @@ class Game:
         self.display.clear(clear_matrix=True)
         self.display.update_points(self.state, self.player1)
         self.display.update_points(self.state, self.player2)
+        self.display.update_crib_sum(self.state)
         self.display.update_hand(self.state, self.player1)
         self.display.update_hand(self.state, self.player2)
+        self.display.update_crib(self.state, hat = True)
         self.display.print(show_board=True)
 
 
@@ -258,8 +268,8 @@ class Game:
             non_dealer.points += hand_score_non_dealer
             self.display.update_points(self.state, non_dealer)
             self.display.clear(clear_matrix=False)
-            self.display.print(tricks_info=hand_score_non_dealer_info, show_board=True)
-            self.wait_after_move()
+            self.display.print(tricks_info=['Non-dealer hand score:'] + hand_score_non_dealer_info, show_board=True)
+            self.wait_after_info()
 
             winner = self.check_win()
             if winner:
@@ -268,18 +278,19 @@ class Game:
             dealer.points += hand_score_dealer
             self.display.update_points(self.state, dealer)
             self.display.clear(clear_matrix=False)
-            self.display.print(tricks_info=hand_score_dealer_info, show_board=True)
-            self.wait_after_move()
+            self.display.print(tricks_info=['Dealer hand score:'] + hand_score_dealer_info, show_board=True)
+            self.wait_after_info()
 
             winner = self.check_win()
             if winner:
                 break
 
             _, crib_score_info = Scoring.score_crib(self.state, self.dealers_crib, update_points = True)
+            self.display.update_crib_reveal(self.state, self.dealers_crib)
             self.display.update_points(self.state, dealer)
             self.display.clear(clear_matrix=False)
-            self.display.print(tricks_info=crib_score_info, show_board=True)
-            self.wait_after_move()
+            self.display.print(tricks_info=['Crib score:'] + crib_score_info, show_board=True)
+            self.wait_after_info()
 
             winner = self.check_win()
             if winner:
