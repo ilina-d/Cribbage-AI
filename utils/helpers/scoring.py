@@ -1,6 +1,5 @@
 from itertools import combinations
 
-from utils.players import BasePlayer
 from utils.helpers import CardDeck
 
 
@@ -8,7 +7,7 @@ class Scoring:
     """ Calculating card combination scores. """
 
     @staticmethod
-    def score_card(state: dict[str, ...], player: BasePlayer, update_points: bool = False) -> tuple[int, list[str]]:
+    def score_card(state: dict[str, ...], player: ..., update_points: bool = False) -> tuple[int, list[str]]:
         """
         Calculate score of the last played card.
 
@@ -56,7 +55,7 @@ class Scoring:
 
 
     @staticmethod
-    def score_hand(state: dict[str, ...], player: BasePlayer, update_points: bool = False) -> tuple[int, list[str]]:
+    def score_hand(state: dict[str, ...], player: ..., update_points: bool = False) -> tuple[int, list[str]]:
         """
         Calculate score for the player's hand.
 
@@ -177,7 +176,7 @@ class Scoring:
 
 
     @staticmethod
-    def score_go(state: dict[str, ...], player: BasePlayer, update_points: bool = False) -> tuple[int, list[str]]:
+    def score_go(state: dict[str, ...], player: ..., update_points: bool = False) -> tuple[int, list[str]]:
         """
         Calculate score for the opposite player of the one who called "GO".
 
@@ -202,7 +201,7 @@ class Scoring:
 
 
     @staticmethod
-    def score_nobs(state: dict[str, ...], player: BasePlayer, update_points: bool = False) -> tuple[int, list[str]]:
+    def score_nobs(state: dict[str, ...], player: ..., update_points: bool = False) -> tuple[int, list[str]]:
         """
         Calculate score for the player's if there's a Jack of the same suit as the starter card in their hand.
 
@@ -233,7 +232,7 @@ class Scoring:
 
 
     @staticmethod
-    def score_last(state: dict[str, ...], player: BasePlayer, update_points: bool = False) -> tuple[int, list[str]]:
+    def score_last(state: dict[str, ...], player: ..., update_points: bool = False) -> tuple[int, list[str]]:
         """
         Calculate score for the player if they played the last (8th) card.
 

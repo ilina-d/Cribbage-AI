@@ -36,7 +36,8 @@ class Display:
     current_card_pos: list[int] = list(PLAY_CARD_TOP)
 
 
-    def __init__(self, player1: BasePlayer, player2: BasePlayer, show_opponents_hand: bool = False) -> None:
+    def __init__(self, player1: BasePlayer, player2: BasePlayer,
+                 show_opponents_hand: bool = False, display_enabled: bool = True) -> None:
         """
         Create and initialize an instance of the Display class.
 
@@ -51,6 +52,8 @@ class Display:
             player1: The first player object.
             player2: The second player object.
             show_opponents_hand: Whether to reveal the opponents hand.
+            display_enabled: Whether the display is enabled.
+                            Setting this to False fully disables the display functionality.
         """
 
         self.matrix = [[]]
@@ -62,7 +65,9 @@ class Display:
         if not isinstance(player1, UserPlayer):
             self.show_opponents_hand = True
 
-        sys_call("")  # Run a system call to enable colors in the terminal.
+        self.display_enabled = display_enabled
+
+        sys_call('')  # Run a system call to enable colors in the terminal.
 
 
     def clear(self, clear_matrix: bool = False) -> None:
@@ -75,6 +80,9 @@ class Display:
             clear_matrix: Whether to clear the display matrix or just the terminal display.
         """
 
+        if not self.display_enabled:
+            return
+
         if clear_matrix:
             self.matrix = [[f'{Back.da_green} {Back.rs}' for _ in range(self.WIDTH)] for _ in range(self.HEIGHT)]
             self.current_card_pos = list(self.PLAY_CARD_TOP)
@@ -82,7 +90,7 @@ class Display:
         print('\033[H', end = '')
 
 
-    def print(self, tricks_info: list[str] = None, show_board: bool = False) -> None:
+    def print(self, tricks_info: list[str] = None, show_board: bool = False, clear: bool = False) -> None:
         """
         Print the display to the terminal.
 
@@ -91,7 +99,14 @@ class Display:
         Arguments:
             tricks_info: Scoring information to print below the board.
             show_board: Whether to print the board or not.
+            clear: Whether to clear the terminal display.
         """
+
+        if not self.display_enabled:
+            return
+
+        if clear:
+            self.clear(clear_matrix = False)
 
         if show_board:
             lines = [''.join(line) + '\n' for line in self.matrix]
@@ -101,7 +116,6 @@ class Display:
             return
 
         print(f'\033[{self.HEIGHT + 1};0H\033[0J')
-
         for trick in tricks_info:
             print(f'\033[2K{trick}')
 
@@ -115,6 +129,9 @@ class Display:
         Arguments:
              state: The current state of the game.
         """
+
+        if not self.display_enabled:
+            return
 
         card = state['starter_card']
         card_matrix = self.get_card_matrix(card) if card else self.get_flipped_card_matrix()
@@ -136,6 +153,9 @@ class Display:
              state: The current state of the game.
              hat: Whether to display a hat instead of a flipped card.
         """
+
+        if not self.display_enabled:
+            return
 
         card_matrix = self.get_hat_matrix() if hat else self.get_flipped_card_matrix()
 
@@ -165,6 +185,9 @@ class Display:
             player: The player who made the move.
             option: The update option.
         """
+
+        if not self.display_enabled:
+            return
 
         if option == "stay":
             return
@@ -203,6 +226,9 @@ class Display:
             player: The player whose hand is altered.
         """
 
+        if not self.display_enabled:
+            return
+
         player_cards = player.cards + [None] * (6 - len(player.cards))
         if not self.show_opponents_hand and player == state["player2"]:
             player_cards = ["F"] * len(player.cards) + [None] * (6 - len(player.cards))
@@ -236,6 +262,9 @@ class Display:
             dealers_crib: The cards in the dealer's crib.
         """
 
+        if not self.display_enabled:
+            return
+
         self.update_crib(state, hat = True)
 
         card_row, card_col = self.HAND_TOP if state["dealer"] == state["player2"] else self.HAND_BOTTOM
@@ -261,6 +290,9 @@ class Display:
             player: The player who scored points.
         """
 
+        if not self.display_enabled:
+            return
+
         points = f'{player.points} pts'
 
         pts_row, pts_col = self.POINTS_TOP if player == state['player2'] else self.POINTS_BOTTOM
@@ -271,6 +303,9 @@ class Display:
 
     def update_crib_sum(self, state: dict[str, ...]) -> None:
         """ Update the terminal display after a card is added to the current crib. """
+
+        if not self.display_enabled:
+            return
 
         crib_sum = state['crib_sums'][state['current_crib_idx']]
         crib_sum = f'{crib_sum:<2} sum'

@@ -53,8 +53,8 @@ class Game:
                 raise Exception("Both players cannot be a UserPlayer instance.")
             self.player1, self.player2 = player2, player1
 
-        self.visuals = visuals  # lol jk
-        self.display = Display(self.player1, self.player2, show_opponents_hand)
+        self.visuals = visuals
+        self.display = Display(self.player1, self.player2, show_opponents_hand, display_enabled = visuals)
 
         def wait_move():
             if wait_after_move is None:
@@ -95,7 +95,7 @@ class Game:
 
         self.called_go = False
 
-        self.display.clear(clear_matrix=True)
+        self.display.clear(clear_matrix = True)
 
 
     def prepare_new_round(self) -> None:
@@ -114,14 +114,14 @@ class Game:
 
         self.called_go = False
 
-        self.display.clear(clear_matrix=True)
+        self.display.clear(clear_matrix = True)
         self.display.update_points(self.state, self.player1)
         self.display.update_points(self.state, self.player2)
         self.display.update_crib_sum(self.state)
         self.display.update_hand(self.state, self.player1)
         self.display.update_hand(self.state, self.player2)
         self.display.update_crib(self.state, hat = True)
-        self.display.print(show_board=True)
+        self.display.print(show_board = True)
 
 
     def check_win(self) -> BasePlayer | None:
@@ -158,8 +158,7 @@ class Game:
 
         self.display.update_hand(self.state, player)
         self.display.update_crib(self.state)
-        self.display.clear(clear_matrix=False)
-        self.display.print(show_board=True)
+        self.display.print(show_board = True, clear = True)
 
 
     def play_card(self, player: BasePlayer) -> None:
@@ -179,17 +178,15 @@ class Game:
                 self.state['current_crib_idx'] += 1
                 self.called_go = False
 
-                self.display.update_play(self.state, player, option="next_crib_go")
-                self.display.clear(clear_matrix=False)
-                self.display.print(show_board=True)
+                self.display.update_play(self.state, player, option = "next_crib_go")
+                self.display.print(show_board = True, clear = True)
             else:
                 self.called_go = True
                 score, tricks_info = Scoring.score_go(self.state, player, update_points = True)
                 other_player = self.player1 if player == self.player2 else self.player2
                 self.display.update_points(self.state, other_player)
-                self.display.update_play(self.state, player, option="stay")
-                self.display.clear(clear_matrix=False)
-                self.display.print(tricks_info=tricks_info, show_board=True)
+                self.display.update_play(self.state, player, option = "stay")
+                self.display.print(tricks_info = tricks_info, show_board = True, clear = True)
             return
 
         current_crib_idx = self.state['current_crib_idx']
@@ -204,12 +201,10 @@ class Game:
             self.called_go = False
 
             self.display.update_play(self.state, player, option="next_crib_31")
-            self.display.clear(clear_matrix=False)
-            self.display.print(tricks_info = tricks_info, show_board=True)
+            self.display.print(tricks_info = tricks_info, show_board = True, clear = True)
         else:
             self.display.update_play(self.state, player, option="next_card")
-            self.display.clear(clear_matrix=False)
-            self.display.print(tricks_info = tricks_info, show_board=True)
+            self.display.print(tricks_info = tricks_info, show_board = True, clear = True)
 
 
     def play(self) -> None:
@@ -234,14 +229,12 @@ class Game:
             self.state['starter_card'] = self.card_deck.deal_cards(1)[0]
 
             self.display.update_starter(self.state)
-            self.display.clear(clear_matrix=False)
-            self.display.print(show_board=True)
+            self.display.print(show_board = True, clear = True)
 
             _, tricks_info = Scoring.score_heels(self.state, update_points = True)
 
             self.display.update_points(self.state, dealer)
-            self.display.clear(clear_matrix=False)
-            self.display.print(tricks_info = tricks_info, show_board=True)
+            self.display.print(tricks_info = tricks_info, show_board = True, clear = True)
 
             # PRE-CALCULATION FOR THE SHOW PHASE
             hand_score_dealer, hand_score_dealer_info = Scoring.score_hand(self.state, dealer, update_points = False)
@@ -267,8 +260,8 @@ class Game:
             # SHOW PHASE
             non_dealer.points += hand_score_non_dealer
             self.display.update_points(self.state, non_dealer)
-            self.display.clear(clear_matrix=False)
-            self.display.print(tricks_info=['Non-dealer hand score:'] + hand_score_non_dealer_info, show_board=True)
+            self.display.print(tricks_info = ['Non-dealer hand score:'] + hand_score_non_dealer_info,
+                               show_board = True, clear = True)
             self.wait_after_info()
 
             winner = self.check_win()
@@ -277,8 +270,8 @@ class Game:
 
             dealer.points += hand_score_dealer
             self.display.update_points(self.state, dealer)
-            self.display.clear(clear_matrix=False)
-            self.display.print(tricks_info=['Dealer hand score:'] + hand_score_dealer_info, show_board=True)
+            self.display.print(tricks_info = ['Dealer hand score:'] + hand_score_dealer_info,
+                               show_board = True, clear = True)
             self.wait_after_info()
 
             winner = self.check_win()
@@ -288,8 +281,8 @@ class Game:
             _, crib_score_info = Scoring.score_crib(self.state, self.dealers_crib, update_points = True)
             self.display.update_crib_reveal(self.state, self.dealers_crib)
             self.display.update_points(self.state, dealer)
-            self.display.clear(clear_matrix=False)
-            self.display.print(tricks_info=['Crib score:'] + crib_score_info, show_board=True)
+            self.display.print(tricks_info = ['Dealer crib score:'] + crib_score_info,
+                               show_board = True, clear = True)
             self.wait_after_info()
 
             winner = self.check_win()

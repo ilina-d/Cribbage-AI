@@ -1,13 +1,15 @@
 import random
 
 from .base_player import BasePlayer
+from utils.helpers.discard_evaluator import DiscardEvaluator
 
-class RandomPlayer(BasePlayer):
+class DiscardProPlayer(BasePlayer):
     """ Player agent that makes random moves. """
 
     def discard_cards(self, state: dict[str, ...]) -> list[str]:
 
-        cards = random.sample(self.cards, 2)
+        cards = DiscardEvaluator.get_discard_stats(self.cards, state['dealer'] == self)
+        cards = cards['recommended']['cards']
 
         self.cards.remove(cards[0])
         self.cards.remove(cards[1])
@@ -25,4 +27,4 @@ class RandomPlayer(BasePlayer):
         return card
 
 
-__all__ = ['RandomPlayer']
+__all__ = ['DiscardProPlayer']
