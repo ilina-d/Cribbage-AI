@@ -1,2 +1,2 @@
-sty
-# inzhinerska matematika (slushan ne polozhen)
+sty~=1.0.6
+torch~=2.7.0

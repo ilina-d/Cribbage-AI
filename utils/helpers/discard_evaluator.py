@@ -26,7 +26,7 @@ class DiscardEvaluator:
 
 
     @classmethod
-    def _score_hand(cls, cards: list[str], starter_card: str) -> int:
+    def score_hand(cls, cards: list[str], starter_card: str) -> int:
         """
         Calculate the score of a given hand and starter card using precomputed hand scores.
 
@@ -65,7 +65,7 @@ class DiscardEvaluator:
 
 
     @classmethod
-    def _score_crib(cls, cards: list[str], starter_card: str) -> int:
+    def score_crib(cls, cards: list[str], starter_card: str) -> int:
         """
         Calculate the score of a given crib and starter card using precomputed hand scores.
 
@@ -100,7 +100,7 @@ class DiscardEvaluator:
 
 
     @classmethod
-    def get_discard_stats(cls, hand: list[str], is_dealer: bool) -> dict[str, ...]:
+    def get_discard_stats(cls, hand: list[str], is_dealer: bool) -> dict[str, list]:
         """
         Get discard suggestions for a given hand.
 
@@ -113,29 +113,8 @@ class DiscardEvaluator:
         ------
 
         Returns:
-            A dictionary of different discard suggestions.
+            A dictionary of different discard suggestions, sorted from best to worst (by their criteria).
         """
-
-        # Recommended: The two cards that give the highest average when discarded.
-        #              If there are multiple combinations with the same average, take the one with the
-        #              highest hand score.
-        recommended_cards, recommended_score = None, float('-inf')
-
-        # For the following plays, if there are multiple combinations with the same value (min, max, ...),
-        # take the one with the highest average.
-
-        # Sure Bet: The two cards that give the highest minimum when discarded.
-        sure_bet_cards, sure_bet_score = None, float('-inf')
-
-        # Risky Bet: The two cards that give the highest maximum when discarded.
-        risky_bet_cards, risky_bet_score = None, float('-inf')
-
-        # Hail Mary: The two cards that give the best shot at a high score when discarded.
-        #            In other words, the two cards that score at least X points or more, 5% of the time.
-        hail_mary_cards, hail_mary_score = None, float('-inf')
-
-        # Aggressive: The two cards that give highest average hand score when discarded.
-        aggressive_cards, aggressive_score = None, float('-inf')
 
         discard_combos = {}
         deck = CardDeck(shuffle = False)
@@ -148,14 +127,14 @@ class DiscardEvaluator:
             all_disc_scores = []
             for starter_card in deck:
 
-                hand_score = cls._score_hand(remaining_hand, starter_card)
+                hand_score = cls.score_hand(remaining_hand, starter_card)
                 all_hand_scores.append(hand_score)
 
                 remaining_deck = deck.copy()
                 remaining_deck.remove(starter_card)
                 for opp_cards in itertools.combinations(remaining_deck, 2):
                     crib_cards = list(my_cards) + list(opp_cards)
-                    crib_score = cls._score_crib(crib_cards, starter_card)
+                    crib_score = cls.score_crib(crib_cards, starter_card)
                     all_crib_scores.append(crib_score)
 
                     disc_score = hand_score + crib_score if is_dealer else hand_score - crib_score
@@ -170,47 +149,39 @@ class DiscardEvaluator:
             discard_combos[my_cards] = {'avg' : avg_score, 'min' : min_score, 'max' : max_score,
                                         'hand' : hand_score, 'high' : high_score}
 
-            if avg_score > recommended_score:
-                recommended_score = avg_score
-                recommended_cards = my_cards
-            elif avg_score == recommended_score and hand_score > discard_combos[recommended_cards]['hand']:
-                recommended_score = avg_score
-                recommended_cards = my_cards
+        # Recommended: Card pairs sorted by the highest average when discarded.
+        #              If there are multiple combinations with the same average, take the one with the
+        #              highest hand score.
+        recommended = [(cards, scores['avg']) for cards, scores in sorted(
+            discard_combos.items(), key = lambda item: (item[1]['avg'], item[1]['hand']), reverse = True)]
 
-            if min_score > sure_bet_score:
-                sure_bet_score = min_score
-                sure_bet_cards = my_cards
-            elif min_score == sure_bet_score and avg_score > discard_combos[sure_bet_cards]['avg']:
-                sure_bet_score = min_score
-                sure_bet_cards = my_cards
+        # For the following plays, if there are multiple combinations with the same value (min, max, ...),
+        # take the one with the highest average.
 
-            if max_score > risky_bet_score:
-                risky_bet_score = max_score
-                risky_bet_cards = my_cards
-            elif max_score == risky_bet_score and avg_score > discard_combos[risky_bet_cards]['avg']:
-                risky_bet_score = max_score
-                risky_bet_cards = my_cards
+        # Sure Bet: Card pairs sorted by the highest minimum when discarded.
+        sure_bet = [(cards, scores['min']) for cards, scores in sorted(
+            discard_combos.items(), key = lambda item: (item[1]['min'], item[1]['avg']), reverse = True)]
 
-            if high_score > hail_mary_score:
-                hail_mary_score = high_score
-                hail_mary_cards = my_cards
-            elif high_score == hail_mary_score and avg_score > discard_combos[hail_mary_cards]['avg']:
-                hail_mary_score = high_score
-                hail_mary_cards = my_cards
+        # Risky Bet: Card pairs sorted by the highest maximum when discarded.
+        risky_bet = [(cards, scores['max']) for cards, scores in sorted(
+            discard_combos.items(), key = lambda item: (item[1]['max'], item[1]['avg']), reverse = True)]
 
-            if hand_score > aggressive_score:
-                aggressive_score = hand_score
-                aggressive_cards = my_cards
-            elif hand_score == aggressive_score and avg_score > discard_combos[aggressive_cards]['avg']:
-                aggressive_score = hand_score
-                aggressive_cards = my_cards
+        # Hail Mary: Card pairs sorted by their best shot at a high score when discarded.
+        #            Where the high score is X points or more, 5% of the time.
+        hail_mary = [(cards, scores['high']) for cards, scores in sorted(
+            discard_combos.items(), key = lambda item: (item[1]['high'], item[1]['avg']), reverse = True)]
+
+        # Aggressive: Card pairs sorted by the highest average hand score when discarded.
+        aggressive = [(cards, scores['hand']) for cards, scores in sorted(
+            discard_combos.items(), key = lambda item: (item[1]['hand'], item[1]['avg']), reverse = True)]
+
 
         return {
-            'recommended' : {'cards' : recommended_cards, 'evaluation' : recommended_score},
-            'sure_bet' : {'cards' : sure_bet_cards, 'evaluation' : sure_bet_score},
-            'risky_bet' : {'cards' : risky_bet_cards, 'evaluation' : risky_bet_score},
-            'hail_mary' : {'cards' : hail_mary_cards, 'evaluation' : hail_mary_score},
-            'aggressive' : {'cards' : aggressive_cards, 'evaluation' : aggressive_score}
+            'recommended' : recommended,
+            'sure_bet' : sure_bet,
+            'risky_bet' : risky_bet,
+            'hail_mary' : hail_mary,
+            'aggressive' : aggressive
         }
 
 

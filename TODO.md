@@ -38,7 +38,9 @@
 
 ---
 # TODO
-- Implement an AI player with a neural network.
+- Implement early stopping in `DiscardTrainer`.
+- Implement progress printing in `DiscardTrainer`.
+- Implement different neural network structures and player agents.
 - Beautify scoring info when displayed in the terminal.
 
 ---
@@ -65,13 +67,20 @@
 - Neural network training:
   - For discarding cards, use a statistical coach.
   - For playing cards, penalize or reward all moves during the game depending on whether the agent lost or won.
+  
+- Player agents that use neural nets expect a network with preloaded weights.
 
 ---
 # Latest Changes
-Implemented evaluation for discarding cards, visual updates, and minor fixes.
+Began implementing neural network agents.
 
-- Added a `clear` argument to `Display.print()` for clearing the terminal display before printing.
-- Finished implementing the `visuals` toggle for `Game` and `Display`.
-- Added `DiscardEvaluator` to `utils/helpers/` for choosing which cards to discard based on statistical probability.
-- Added missing `__all__` variable to `RandomPlayer`.
+- Added `StateEncoder` for encoding game states in a format recognizable for neural networks.
+- Added a `neural_nets` module.
+  - Added a `BaseDiscardNet` from which all discard policy nets will inherit.
+  - Added `DiscardNetV1`.
+  - Added `DiscardTrainer` for training different discard policy nets.
+- Added `DNPRPlayer` that uses the first version of the discard net.
+- Altered `DiscardEvaluator` to return all combinations of card pairs, sorted by their criteria.
+- Updated `requirements.txt`.
+- Minor variable name and docstring changes.
 - Updated TODO.
