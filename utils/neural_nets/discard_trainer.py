@@ -25,17 +25,16 @@ def _get_batch_data(args: dict[str, ...]) -> dict[str, ...]:
     """
 
     play_style = args['play_style']
-    alpha = args['alpha']
 
     deck = CardDeck(shuffle=True)
     hand_cards, crib_cards, starter_card = deck.deal_cards(6), deck.deal_cards(2), deck.deal_cards(1)[0]
     is_dealer = random.choice([True, False])
     score1, score2 = random.randint(0, 121), random.randint(0, 121)
 
-    best_cards = None
-    if alpha > 0:
-        ranked_pairs = DiscardEvaluator.get_discard_stats(hand_cards, is_dealer)[play_style]
-        best_cards = ranked_pairs[0][0]
+    ranked_pairs = DiscardEvaluator.get_discard_stats(hand_cards, is_dealer)[play_style]
+    best_cards = ranked_pairs[0][0]
+
+    baseline = sum([score for _, score in ranked_pairs]) / 15
 
     return {
         'score1': score1,
@@ -44,9 +43,9 @@ def _get_batch_data(args: dict[str, ...]) -> dict[str, ...]:
         'hand_cards': hand_cards,
         'crib_cards': crib_cards,
         'starter_card': starter_card,
-        'best_cards': best_cards
+        'best_cards': best_cards,
+        'baseline' : baseline
     }
-
 
 
 class DiscardTrainer:
@@ -152,9 +151,9 @@ class DiscardTrainer:
 
         with Pool(processes = num_workers) as pool:
             for epoch in range(1, epochs + 1):
-                total_loss, total_reward, total_reward_norm = 0, 0, 0
+                total_loss, total_reward, total_advantage = 0, 0, 0
 
-                batch_args = [{'play_style': play_style, 'alpha': alpha} for _ in range(batch_size)]
+                batch_args = [{'play_style': play_style} for _ in range(batch_size)]
                 batch_results = pool.map(_get_batch_data, batch_args)
 
                 for batch in batch_results:
@@ -163,16 +162,21 @@ class DiscardTrainer:
                     is_dealer = batch['is_dealer']
                     starter_card = batch['starter_card']
 
-                    distribution = discard_network.get_distribution_policy(batch['score1'], batch['score2'],
-                                                                           is_dealer, hand_cards)
-                    best_combo = max(distribution, key=lambda x: x[2].item())
-                    card1, card2, confidence = best_combo[0], best_combo[1], best_combo[2]
+                    distribution = discard_network.get_distribution_policy(
+                        batch['score1'], batch['score2'], is_dealer, hand_cards
+                    )
+
+                    log_probs = torch.stack([combo[2] for combo in distribution])
+                    probs = torch.exp(log_probs)
+
+                    chosen_combo = distribution[torch.multinomial(probs, 1).item()]
+                    card1, card2, confidence = chosen_combo[0], chosen_combo[1], chosen_combo[2]
 
                     imitation_loss = 0
                     if alpha > 0:
                         best_pair = batch['best_cards']
                         imitation_loss = -discard_network.get_combo_confidence(
-                            distribution, card1=best_pair[0], card2=best_pair[1]
+                            distribution, card1 = best_pair[0], card2 = best_pair[1]
                         )
 
                     hand_cards.remove(card1)
@@ -181,33 +185,36 @@ class DiscardTrainer:
                     hand_score = DiscardEvaluator.score_hand(hand_cards, starter_card)
                     crib_score = DiscardEvaluator.score_crib(crib_cards, starter_card)
 
+                    # reward range is [-29, 53]
                     reward = hand_score + crib_score if is_dealer else hand_score - crib_score
-                    normalized_reward = (reward - cls.WORST_OUTCOME) / (cls.BEST_OUTCOME - cls.WORST_OUTCOME)
-                    rl_loss = -(1 / normalized_reward) * confidence
+                    baseline = batch['baseline']
+                    advantage = reward - baseline
 
+                    rl_loss = -confidence * advantage
                     loss = alpha * imitation_loss + (1 - alpha) * rl_loss
+
                     optimizer.zero_grad()
                     loss.backward()
                     optimizer.step()
 
                     total_loss += loss.item()
                     total_reward += reward
-                    total_reward_norm += normalized_reward
+                    total_advantage += advantage
 
                 scheduler.step()
 
                 avg_loss = total_loss / batch_size
                 avg_reward = total_reward / batch_size
-                avg_reward_norm = total_reward_norm / batch_size
+                avg_advantage = total_advantage / batch_size
 
                 if epoch % alpha_step == 0 and alpha > 0:
                     alpha = max(alpha - alpha_decay, 0)
 
                 cls._log(f'* Epoch: {epoch:<{epoch_spaces}}  |'
-                         f'  L: {avg_loss:<4.8f}'
-                         f'  R: {avg_reward:<4.8f}'
-                         f'  RN: {avg_reward_norm:<4.8f}'
-                         f'  A: {alpha}')
+                         f'  Avg L: {avg_loss:<4.8f}'
+                         f'  Avg R: {avg_reward:<4.8f}'
+                         f'  Avg A: {avg_advantage:<4.8f}'
+                         f'  Alpha: {alpha:<4.8f}')
 
         cls._log('Training finished.')
 

@@ -32,8 +32,14 @@
 
 ---
 # Latest Changes
-Minor bug fixes and implementation of multiprocessing.
+DiscardTrainer exploration and loss updates, began working on pegging neural nets.
 
-- Fixed alpha updates and supervised training bugs in `DiscardTrainer`.
-- Added net structure to training logs.
-- Implemented parallelism for batching while training.
+- `DiscardTrainer` loss calculation changes:
+  - Reverted to prior loss formula (`-log_prob x reward`).
+  - Reward is now calculated as advantage from baseline.
+- Implemented exploration in `DiscardTrainer`.
+- Added `DisacrdNetV2` without dropout layers.
+- Implemented `BasePeggingNet`.
+- Added `PeggingNetV1`.
+- Added `PeggingTrainer` class shell.
+- Updated TODO.

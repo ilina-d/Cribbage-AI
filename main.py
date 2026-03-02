@@ -2,17 +2,17 @@ from utils.assets import Display
 from utils.players import RandomPlayer, UserPlayer, AnalyticalDiscardPlayer, DNPRPlayer
 from utils.game import Game
 
-from utils.neural_nets import DiscardNetV1, DiscardTrainer
+from utils.neural_nets import DiscardNetV1, DiscardTrainer, DiscardNetV2
 
 
 if __name__ == '__main__':
-    net = DiscardNetV1()
+    net = DiscardNetV2()
     DiscardTrainer.train(
         net,
         play_style='recommended',
         lr=1e-3,
         wd=1e-4,
-        epochs=10,
+        epochs=100,
         alpha=1,
         alpha_step=10,
         alpha_decay=0.1,
@@ -20,7 +20,7 @@ if __name__ == '__main__':
         num_workers=16
     )
     DiscardTrainer.save(
-        net, f'discard_net_v1_test',
+        net, f'discard_net_v2_test',
         comment='Test Test :3',
         logs=True
     )
