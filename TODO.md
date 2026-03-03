@@ -32,14 +32,8 @@
 
 ---
 # Latest Changes
-DiscardTrainer exploration and loss updates, began working on pegging neural nets.
+Implemented game simulations.
 
-- `DiscardTrainer` loss calculation changes:
-  - Reverted to prior loss formula (`-log_prob x reward`).
-  - Reward is now calculated as advantage from baseline.
-- Implemented exploration in `DiscardTrainer`.
-- Added `DisacrdNetV2` without dropout layers.
-- Implemented `BasePeggingNet`.
-- Added `PeggingNetV1`.
-- Added `PeggingTrainer` class shell.
+- Implemented `Simulator` for simulating games and measuring performance.
+- Added statistic measurements to `Game`.
 - Updated TODO.

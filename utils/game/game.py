@@ -18,7 +18,7 @@ class Game:
 
     def __init__(self, player1: BasePlayer, player2: BasePlayer, visuals: bool = True,
                  wait_after_move: int | str | None = 'input', wait_after_info: bool = True,
-                 show_opponents_hand: bool = False) -> None:
+                 show_opponents_hand: bool = False, measure_statistics: bool = False) -> None:
         """
         Create and initialize an instance of the Game class.
 
@@ -45,6 +45,7 @@ class Game:
             wait_after_move: The method for waiting after each move.
             wait_after_info: Whether to wait for input after scoring is shown.
             show_opponents_hand: Whether to reveal the opponents hand on the display.
+            measure_statistics: Whether to measure game statistics and player performance.
         """
 
         self.player1, self.player2 = player1, player2
@@ -71,6 +72,12 @@ class Game:
             input('... waiting for input ...')
         self.wait_after_info = wait_info
 
+        self.measure_statistics = measure_statistics
+        self.stats_score_diff = []
+        self.stats_score_diff_dealer1 = []
+        self.stats_score_diff_dealer2 = []
+        self.stats_total_game_rounds = 0
+
         self.reset_game()
 
 
@@ -93,9 +100,18 @@ class Game:
         self.player1.cards = []
         self.player2.cards = []
 
+        self.player1.points = 0
+        self.player2.points = 0
+
         self.called_go = False
 
         self.display.clear(clear_matrix = True)
+
+        if self.measure_statistics:
+            self.stats_score_diff = []
+            self.stats_score_diff_dealer1 = []
+            self.stats_score_diff_dealer2 = []
+            self.stats_total_game_rounds = 0
 
 
     def prepare_new_round(self) -> None:
@@ -207,13 +223,24 @@ class Game:
             self.display.print(tricks_info = tricks_info, show_board = True, clear = True)
 
 
-    def play(self) -> None:
-        """ Start the main game loop. """
+    def play(self) -> BasePlayer:
+        """
+        Start the main game loop.
+
+        ------
+
+        Returns:
+            The player who won.
+        """
 
         self.reset_game()
-        winner = None
 
+        winner = None
         while winner is None:
+
+            if self.measure_statistics:
+                self.stats_total_game_rounds += 1
+
             self.prepare_new_round()
             dealer = self.state['dealer']
             non_dealer = self.player1 if dealer == self.player2 else self.player2
@@ -289,8 +316,17 @@ class Game:
             if winner:
                 break
 
+            if self.measure_statistics:
+                score_diff = self.player1.points - self.player2.points
+                self.stats_score_diff.append(score_diff)
+
+                if dealer is self.player1:
+                    self.stats_score_diff_dealer1.append(score_diff)
+                else:
+                    self.stats_score_diff_dealer2.append(score_diff)
+
         # GAME END
-        input('done :D')
+        return winner
 
 
 __all__ = ['Game']
