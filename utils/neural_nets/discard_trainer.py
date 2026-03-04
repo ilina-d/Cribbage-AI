@@ -44,7 +44,8 @@ def _get_batch_data(args: dict[str, ...]) -> dict[str, ...]:
         'crib_cards': crib_cards,
         'starter_card': starter_card,
         'best_cards': best_cards,
-        'baseline' : baseline
+        'baseline' : baseline,
+        'debug' : args['debug']
     }
 
 
@@ -75,8 +76,8 @@ class DiscardTrainer:
 
     @classmethod
     def train(cls, discard_network: BaseDiscardNet, lr: float, wd: float, epochs: int, batch_size: int = 32,
-              early_stop: bool = True, play_style: str = None, alpha: float = 0.0, alpha_decay: float = 0.95,
-              alpha_step: int = 10, num_workers: int = 1) -> None:
+              pool_size: int = 8, early_stop: bool = True, play_style: str = 'recommended', alpha: float = 0.0,
+              alpha_decay: float = 0.95, alpha_step: int = 10, num_workers: int = 1) -> None:
         """
         Train the given discard neural network using reinforced supervised or unsupervised learning.
 
@@ -99,8 +100,11 @@ class DiscardTrainer:
             wd: The weight decay.
             epochs: The number of epochs.
             batch_size: The number of batches per epoch.
+            pool_size: The number of sample states to generate per batch.
             early_stop: Whether to stop training early if results are satisfactory.
             play_style: The play style the net should be trained in.
+                        The same play style is used to calculate a reward baseline even when unsupervised.
+                        Defaults to "recommended".
             alpha: How reliant the network is on the given play-style initially.
             alpha_decay: By how much to reduce the network's dependency of the given play-style.
             alpha_step: How often to decay alpha in epochs.
@@ -113,11 +117,25 @@ class DiscardTrainer:
         """
 
         cls._training_logs = ''
-
         cls._log(
             f'{discard_network.__class__.__name__} Structure Details:\n'
             f'{discard_network.net}\n\n'
         )
+
+        epoch_spaces = len(str(epochs))
+
+        net = discard_network.net
+        optimizer = optim.AdamW(net.parameters(), lr = lr, weight_decay = wd)
+        scheduler = optim.lr_scheduler.CosineAnnealingLR(optimizer, T_max = epochs, eta_min = 1e-5)
+
+        num_workers = min(cpu_count(), num_workers)
+        if pool_size % num_workers != 0:
+            cls._log(f'Pool size {pool_size} cannot be evenly distributed to {num_workers} workers.')
+
+            if num_workers > pool_size:
+                num_workers = pool_size
+            pool_size = pool_size // num_workers * num_workers
+            cls._log(f'Pool size changed to {pool_size}. Number of workers changed to {num_workers}.')
 
         cls._log(
             f'{discard_network.__class__.__name__} Training Details:\n'
@@ -134,36 +152,26 @@ class DiscardTrainer:
             f'* Alpha Step: {alpha_step}\n\n'
         )
 
-        epoch_spaces = len(str(epochs))
-
-        net = discard_network.net
-        optimizer = optim.AdamW(net.parameters(), lr = lr, weight_decay = wd)
-        scheduler = optim.lr_scheduler.CosineAnnealingLR(optimizer, T_max = epochs, eta_min = 1e-5)
-
-        num_workers = min(cpu_count(), num_workers)
-        if batch_size % num_workers != 0:
-            cls._log(f'Batch size {batch_size} cant be evenly distributed to cores.')
-            batch_size = (batch_size // num_workers) * num_workers
-            cls._log(f'Changed batch size to {batch_size}.')
-
         cls._log(f'Training with {discard_network.device}...')
         net.train()
 
         with Pool(processes = num_workers) as pool:
             for epoch in range(1, epochs + 1):
                 total_loss, total_reward, total_advantage = 0, 0, 0
+                optimizer.zero_grad()
 
-                batch_args = [{'play_style': play_style} for _ in range(batch_size)]
-                batch_results = pool.map(_get_batch_data, batch_args)
+                batch_data_args = [{'play_style': play_style, 'debug' : i} for i in range(pool_size)]
+                state_pool = pool.map(_get_batch_data, batch_data_args)
 
-                for batch in batch_results:
-                    hand_cards = batch['hand_cards']
-                    crib_cards = batch['crib_cards']
-                    is_dealer = batch['is_dealer']
-                    starter_card = batch['starter_card']
+                for _ in range(batch_size):
+                    state = random.choice(state_pool)
+                    hand_cards = state['hand_cards'].copy()
+                    crib_cards = state['crib_cards'].copy()
+                    is_dealer = state['is_dealer']
+                    starter_card = state['starter_card']
 
                     distribution = discard_network.get_distribution_policy(
-                        batch['score1'], batch['score2'], is_dealer, hand_cards
+                        state['score1'], state['score2'], is_dealer, hand_cards
                     )
 
                     log_probs = torch.stack([combo[2] for combo in distribution])
@@ -174,7 +182,7 @@ class DiscardTrainer:
 
                     imitation_loss = 0
                     if alpha > 0:
-                        best_pair = batch['best_cards']
+                        best_pair = state['best_cards']
                         imitation_loss = -discard_network.get_combo_confidence(
                             distribution, card1 = best_pair[0], card2 = best_pair[1]
                         )
@@ -187,27 +195,26 @@ class DiscardTrainer:
 
                     # reward range is [-29, 53]
                     reward = hand_score + crib_score if is_dealer else hand_score - crib_score
-                    baseline = batch['baseline']
+                    baseline = state['baseline']
                     advantage = reward - baseline
 
                     rl_loss = -confidence * advantage
                     loss = alpha * imitation_loss + (1 - alpha) * rl_loss
 
-                    optimizer.zero_grad()
                     loss.backward()
-                    optimizer.step()
 
                     total_loss += loss.item()
                     total_reward += reward
                     total_advantage += advantage
 
+                optimizer.step()
                 scheduler.step()
 
                 avg_loss = total_loss / batch_size
                 avg_reward = total_reward / batch_size
                 avg_advantage = total_advantage / batch_size
 
-                if epoch % alpha_step == 0 and alpha > 0:
+                if alpha_step > 0 and epoch % alpha_step == 0 and alpha > 0:
                     alpha = max(alpha - alpha_decay, 0)
 
                 cls._log(f'* Epoch: {epoch:<{epoch_spaces}}  |'

@@ -6,29 +6,11 @@ from utils.simulator import Simulator
 
 
 if __name__ == '__main__':
-    nets_v1 = [
-        'DNV1_48K_Independent', 'DNV1_48K_Supervised_aggressive',
-        'DNV1_48K_Supervised_recommended1', 'DNV1_48K_Supervised_recommended2'
-    ]
 
-    nets_v2 = [
-        'DNV2_48K_Independent', 'DNV2_48K_Supervised_aggressive',
-        'DNV2_48K_Supervised_recommended1', 'DNV2_48K_Supervised_recommended2'
-    ]
-
-    for net_name in nets_v1:
-        net = DiscardNetV1()
-        net.load_weights(net_name)
-
-        sim = Simulator(
-            player1 = DNPRPlayer(discard_net = net),
-            player2 = RandomPlayer(),
-            num_simulations = 1000,
-            measure_performance = False
-        )
-
-        sim.start()
-
+    net = DiscardNetV1()
+    DiscardTrainer.train(
+        net, lr = 1e-3, wd = 1e-4, epochs = 10, batch_size = 32, pool_size = 8, num_workers = 8
+    )
 
     input('... preventing program from continuing by waiting for input ...\n'
           '... full-screen the terminal before continuing ...')

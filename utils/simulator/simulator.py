@@ -49,6 +49,7 @@ class Simulator:
             measure_statistics = True
         )
 
+        print('\033[H\033[J', end = '')
         print('[ SIMULATOR ] : Running simulations...')
 
         for n in range(1, self.num_simulations + 1):
@@ -77,17 +78,28 @@ class Simulator:
             else:
                 estimated_tl = f'~{int(estimated_tl)} seconds'
 
-            print('\033[H', end = '')
+            sims_per_min = n / sum_game_times * 60
+
+            print('\033[H\033[J', end = '')
             print(
                 f'[ SIMULATOR ] : Running simulations... '
                 f'{str(round(percent_done, 2)) + "%":<6} '
                 f'<{"=" * int(percent_done)}{"-" * int(100 - int(percent_done))}> '
-                f'| P1 ({player1_wins}) vs ({player2_wins}) P2 | ETL: {estimated_tl}'
+                f'| P1 ({player1_wins}) vs ({player2_wins}) P2 '
+                f'| ETL: {estimated_tl} '
+                f'| ~{sims_per_min:.2f} spm'
             )
 
         print(
             f'\n'
-            f'>   SIMULATION RESULTS      \n'
+            f'-----[ SIMULATION RESULTS ]-----\n'
+            f'[ {self.player1.__class__.__name__} ] vs [ {self.player2.__class__.__name__} ]\n'
+            f'================================================\n'
+            f'--- Configuration            :\n'
+            f'* Player 1                   : {self.player1.__class__.__name__}\n'
+            f'* Player 2                   : {self.player2.__class__.__name__}\n'
+            f'* Number of Simulations      : {self.num_simulations}\n'
+            f'* Measuring Performance      : {self.measure_performance}\n'
             f'================================================\n'
             f'--- Duration Stats           :\n'
             f'* Total Simulation Time      : {time.time() - total_sim_time:.2f} sec\n'

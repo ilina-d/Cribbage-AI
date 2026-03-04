@@ -24,11 +24,11 @@ class PeggingNetV1(BasePeggingNet):
             nn.Linear(self.INPUT_SIZE, 256),
             nn.LayerNorm(256),
             nn.ReLU(),
-            nn.Dropout(p=0.2),
+            nn.Dropout(p = 0.2),
             nn.Linear(256, 128),
             nn.LayerNorm(128),
             nn.ReLU(),
-            nn.Dropout(p=0.2),
+            nn.Dropout(p = 0.2),
             nn.Linear(128, 64),
             nn.ReLU(),
             nn.Linear(64, self.OUTPUT_SIZE)
