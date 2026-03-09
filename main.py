@@ -1,21 +1,27 @@
 from utils.assets import Display
 from utils.players import RandomPlayer, UserPlayer, AnalyticalDiscardPlayer, DNPRPlayer
 from utils.game import Game
-from utils.neural_nets import DiscardNetV1, DiscardTrainer, DiscardNetV2, \
-    PeggingTrainer, PeggingNetV1
+from utils.neural_nets import DiscardNetV1, DiscardTrainer, DiscardNetV2, PeggingTrainer, PeggingNetV1
 from utils.simulator import Simulator
 
 
 if __name__ == '__main__':
 
     pegging_net = PeggingNetV1()
-    PeggingTrainer.train(pegging_net, 1e-3, 1e-4, 100, opponent = RandomPlayer(),
-                         batch_size = 20, pool_size = 20, early_stop = False, num_workers = 20)
 
-    input('... test ...')
+    PeggingTrainer.train(
+        pegging_net,
+        lr = 1e-5,
+        wd = 1e-6,
+        epochs = 10_000,
+        opponent = RandomPlayer(),
+        batch_size = 100,
+        pool_size = 20,
+        num_workers = 24,
+        early_stop = False,
+    )
 
-    sim = Simulator(RandomPlayer(), RandomPlayer(), 1000)
-    sim.start()
+    PeggingTrainer.save(pegging_net, 'PNV1_0K_RandomOpponent', 'PeggingNetV1 plays 1M games against a random opponent.')
 
     input('... preventing program from continuing by waiting for input ...\n'
           '... full-screen the terminal before continuing ...')

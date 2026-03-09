@@ -68,18 +68,18 @@ class BasePeggingNet(nn.Module):
 
         outputs = self.net(torch.tensor(encoded_state, dtype=torch.float32, device=self.device))
 
-        invalid_mask = [i < len(player_hand) and CardDeck.get_card_worth(player_hand[i]) + current_crib_sum <= 31
-                        for i in range(4)]
-        if True in invalid_mask:
-            invalid_mask.append(False)
+        valid_mask = [i < len(player_hand) and CardDeck.get_card_worth(player_hand[i]) + current_crib_sum <= 31
+                      for i in range(4)]
+        if True in valid_mask:
+            valid_mask.append(False)
         else:
-            invalid_mask.append(True)
+            valid_mask.append(True)
 
-        outputs[~torch.tensor(invalid_mask)] = float('-inf')
-        probs = F.log_softmax(outputs, dim=-1)
+        outputs[~torch.tensor(valid_mask)] = float('-inf')
+        probs = F.log_softmax(outputs, dim = -1)
 
         actions = []
-        for card, prob in zip(player_hand + ['GO'], probs):
+        for card, prob in zip([player_hand[i] if i < len(player_hand) else None for i in range(4)] + ['GO'], probs):
             actions.append((card, prob))
 
         return actions

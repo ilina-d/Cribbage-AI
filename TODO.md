@@ -40,9 +40,9 @@
 
 ---
 # Latest Changes
-PeggingTrainer implementation and small bug fixes.
+PeggingTrainer and BasePeggingNet bug fixes.
 
-- Implemented `PeggingTrainer`.
-- Fixed invalid_mask issue in `BasePeggingNet`.
-- Adjusted values of scores in `DiscardTrainer` so won scenarios will not be generated.
-- Fixed `Simulator` clearing the entire screen when printing.
+- Fixed `PeggingTrainer` checking `cribs == 31` instead of `crib_sums` while running episodes.
+- Fixed `BasePeggingNet` incorrectly appending to the `actions` list.
+- Renamed `invalid_mask` to `valid_mask` in `BasePeggingNet`.
+- Changed `PeggingTrainer` to only use multinomial actions while running episodes.

@@ -105,10 +105,10 @@ def _run_episode(state: dict[str, ...], pegging_net: BasePeggingNet,
             log_probs = torch.stack([card[1] for card in distribution])
             probs = torch.exp(log_probs)
 
-            if probs.sum().item() <= 0 or torch.isnan(probs).any():
-                played_card, confidence = distribution[log_probs.argmax().item()]
-            else:
-                played_card, confidence = distribution[torch.multinomial(probs, 1).item()]
+            # if probs.sum().item() <= 0 or torch.isnan(probs).any():
+            #     played_card, confidence = distribution[log_probs.argmax().item()]
+            # else:
+            played_card, confidence = distribution[torch.multinomial(probs, 1).item()]
 
             if played_card != 'GO':
                 player_hand.remove(played_card)
@@ -145,7 +145,7 @@ def _run_episode(state: dict[str, ...], pegging_net: BasePeggingNet,
             else:
                 score2 += score
 
-            if cribs[current_crib_idx] == 31:
+            if crib_sums[current_crib_idx] == 31:
                 current_crib_idx += 1
                 called_go = False
 
@@ -260,7 +260,7 @@ class PeggingTrainer:
 
                 batch_data_args = [{'play_style': ps} for ps in play_styles] * num_eval_discards
                 batch_data_args += [{'play_style': 'random'}] * num_rand_discards
-                state_pool =  pool.map(_get_batch_data, batch_data_args)
+                state_pool = pool.map(_get_batch_data, batch_data_args)
 
                 for _ in range(batch_size):
                     state = random.choice(state_pool)
