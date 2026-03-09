@@ -40,13 +40,9 @@
 
 ---
 # Latest Changes
-DiscardTrainer updates to batched loss propagation, on-policy exploration, and fixes.
+PeggingTrainer implementation and small bug fixes.
 
-- `DiscardTrainer` changes:
-  - Implemented on-policy exploration. Trainer now pulls from a set of predefined states every batch, ensuring that
-    some states are observed multiple times before changing the policy.
-  - Fixed loss being propagated after every batch-iteration instead of after the entire batch.
-  - Fixed `play_style` causing an error if left as None.
-  - Fixed `alpha_step` causing an error if set to 0.
-- Minor `Simulator` fixes and changes.
-- Updated TODO.
+- Implemented `PeggingTrainer`.
+- Fixed invalid_mask issue in `BasePeggingNet`.
+- Adjusted values of scores in `DiscardTrainer` so won scenarios will not be generated.
+- Fixed `Simulator` clearing the entire screen when printing.

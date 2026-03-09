@@ -29,7 +29,7 @@ def _get_batch_data(args: dict[str, ...]) -> dict[str, ...]:
     deck = CardDeck(shuffle=True)
     hand_cards, crib_cards, starter_card = deck.deal_cards(6), deck.deal_cards(2), deck.deal_cards(1)[0]
     is_dealer = random.choice([True, False])
-    score1, score2 = random.randint(0, 121), random.randint(0, 121)
+    score1, score2 = random.randint(0, 120), random.randint(0, 120)
 
     ranked_pairs = DiscardEvaluator.get_discard_stats(hand_cards, is_dealer)[play_style]
     best_cards = ranked_pairs[0][0]
@@ -143,6 +143,8 @@ class DiscardTrainer:
             f'* Weight Decay: {wd}\n'
             f'* Epochs: {epochs}\n'
             f'* Batch Size: {batch_size}\n'
+            f'* Pool Size: {pool_size}\n'
+            f'* Num Workers: {num_workers}\n'
             f'\n'
             f'* Early Stopping: {early_stop}\n'
             f'\n'

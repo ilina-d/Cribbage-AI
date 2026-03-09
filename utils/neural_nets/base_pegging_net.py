@@ -68,7 +68,8 @@ class BasePeggingNet(nn.Module):
 
         outputs = self.net(torch.tensor(encoded_state, dtype=torch.float32, device=self.device))
 
-        invalid_mask = [CardDeck.get_card_worth(card) + current_crib_sum <= 31 for card in player_hand]
+        invalid_mask = [i < len(player_hand) and CardDeck.get_card_worth(player_hand[i]) + current_crib_sum <= 31
+                        for i in range(4)]
         if True in invalid_mask:
             invalid_mask.append(False)
         else:
