@@ -37,12 +37,15 @@
   output distribution. If the network becomes very confident early on, the random exploration of other actions will stop.
   It might be worth adding an entropy bonus to the loss gradient.
 - `DiscardTrainer`: Check difference in using Adam(W) and SGD.
+- Change distribution half-way through training to something like: 50% aggressive, 50% recommended discards (Pegging net).
+- Change opponent half-way through training (or when the net reaches a satisfactory point) to Scripted opponent or the net itself.
 
 ---
 # Latest Changes
-PeggingTrainer and BasePeggingNet bug fixes.
+Implemented player for pegging networks comparison, file name changes, small bug fixes.
 
-- Fixed `PeggingTrainer` checking `cribs == 31` instead of `crib_sums` while running episodes.
-- Fixed `BasePeggingNet` incorrectly appending to the `actions` list.
-- Renamed `invalid_mask` to `valid_mask` in `BasePeggingNet`.
-- Changed `PeggingTrainer` to only use multinomial actions while running episodes.
+- `AnalyticalDiscardPlayer` renamed to `DAPRPlayer`, and added option to choose DiscardEvaluator play_style.
+- Implemented a `DAPNPlayer` to compare pegging networks.
+- Fixed issue with `BasePeggingNet` trying to load from wrong directory.
+- Updated TODO.
+- Patted Pepa.

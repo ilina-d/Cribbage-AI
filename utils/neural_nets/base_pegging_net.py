@@ -30,7 +30,7 @@ class BasePeggingNet(nn.Module):
             file_name: The file name to load from.
         """
 
-        self.net.load_state_dict(torch.load(f'trained_nets/discard_nets/{file_name}.pt', map_location = self.device))
+        self.net.load_state_dict(torch.load(f'trained_nets/pegging_nets/{file_name}.pt', map_location = self.device))
 
 
     def forward(self, x: torch.Tensor) -> torch.Tensor:
