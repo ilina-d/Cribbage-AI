@@ -42,10 +42,8 @@
 
 ---
 # Latest Changes
-Implemented player for pegging networks comparison, file name changes, small bug fixes.
+Added trained neural networks.
 
-- `AnalyticalDiscardPlayer` renamed to `DAPRPlayer`, and added option to choose DiscardEvaluator play_style.
-- Implemented a `DAPNPlayer` to compare pegging networks.
-- Fixed issue with `BasePeggingNet` trying to load from wrong directory.
-- Updated TODO.
-- Patted Pepa.
+- Added `DiscardNetV3`.
+- Added `PeggingNetV2`.
+- Added all previously trained weight files.
