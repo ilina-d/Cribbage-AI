@@ -6,12 +6,12 @@ from utils.helpers import CardDeck, Scoring
 class DiscardEvaluator:
     """ Helper for discarding cards based on statistical probability. """
 
-    _precomputed_scores: dict[tuple[str, ...], int] = {}
+    _precomputed_scores: dict[int, int] = {}
     _shift_key_by: dict[str, int] = {rank : 1 << (i * 3) for i, rank in enumerate(CardDeck.CARD_RANKS)}
 
 
     @classmethod
-    def _get_cards_key(cls, cards: list[str]) -> tuple[str, ...]:
+    def _get_cards_key(cls, cards: list[str]) -> int:
         """
         Get a key for the precomputed scores dictionary based on the given cards.
 

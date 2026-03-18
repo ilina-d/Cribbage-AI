@@ -44,12 +44,11 @@ def _get_batch_data(args: dict[str, ...]) -> dict[str, ...]:
         'crib_cards': crib_cards,
         'starter_card': starter_card,
         'best_cards': best_cards,
-        'baseline' : baseline,
-        'debug' : args['debug']
+        'baseline' : baseline
     }
 
 
-class DiscardTrainer:
+class DTT_StepAfterBackward:
     """ Neural network trainer for the discarding phase. """
 
     BEST_HAND_SCORE = 29  # four 5s and a Jack with the same suit as the starter card
@@ -126,7 +125,7 @@ class DiscardTrainer:
 
         net = discard_network.net
         optimizer = optim.AdamW(net.parameters(), lr = lr, weight_decay = wd)
-        scheduler = optim.lr_scheduler.CosineAnnealingLR(optimizer, T_max = epochs, eta_min = 1e-5)
+        scheduler = optim.lr_scheduler.CosineAnnealingLR(optimizer, T_max = epochs, eta_min = lr / 100)
 
         num_workers = min(cpu_count(), num_workers)
         if pool_size % num_workers != 0:
@@ -159,10 +158,10 @@ class DiscardTrainer:
 
         with Pool(processes = num_workers) as pool:
             for epoch in range(1, epochs + 1):
-                total_loss, total_reward, total_advantage = 0, 0, 0
+                total_loss, total_reward, total_advantage, total_baseline = 0, 0, 0, 0
                 optimizer.zero_grad()
 
-                batch_data_args = [{'play_style': play_style, 'debug' : i} for i in range(pool_size)]
+                batch_data_args = [{'play_style': play_style} for _ in range(pool_size)]
                 state_pool = pool.map(_get_batch_data, batch_data_args)
 
                 for _ in range(batch_size):
@@ -208,13 +207,15 @@ class DiscardTrainer:
                     total_loss += loss.item()
                     total_reward += reward
                     total_advantage += advantage
+                    total_baseline += baseline
 
-                optimizer.step()
-                scheduler.step()
+                    optimizer.step()
+                    scheduler.step()
 
                 avg_loss = total_loss / batch_size
                 avg_reward = total_reward / batch_size
                 avg_advantage = total_advantage / batch_size
+                avg_baseline = total_baseline / batch_size
 
                 if alpha_step > 0 and epoch % alpha_step == 0 and alpha > 0:
                     alpha = max(alpha - alpha_decay, 0)
@@ -223,6 +224,7 @@ class DiscardTrainer:
                          f'  Avg L: {avg_loss:<4.8f}'
                          f'  Avg R: {avg_reward:<4.8f}'
                          f'  Avg A: {avg_advantage:<4.8f}'
+                         f'  Avg B: {avg_baseline:<4.8f}'
                          f'  Alpha: {alpha:<4.8f}')
 
         cls._log('Training finished.')
@@ -251,4 +253,4 @@ class DiscardTrainer:
             file.write(comment)
 
 
-__all__ = ['DiscardTrainer']
+__all__ = ['DTT_StepAfterBackward']

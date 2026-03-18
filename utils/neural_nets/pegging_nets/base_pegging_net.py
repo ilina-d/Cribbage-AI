@@ -8,7 +8,7 @@ from utils.helpers import StateEncoder, CardDeck
 class BasePeggingNet(nn.Module):
     """ Base neural network for training pegging policies. """
 
-    INPUT_SIZE = 208
+    INPUT_SIZE = 190
     OUTPUT_SIZE = 5
     device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
 
@@ -39,8 +39,8 @@ class BasePeggingNet(nn.Module):
         return self.net(x)
 
 
-    def get_distribution_policy(self, player_score: int, opponent_score: int, is_dealer: bool,
-                                current_crib_sum: int, current_crib_cards: list[str], starter_card: str,
+    def get_distribution_policy(self, player_score: int, opponent_score: int,
+                                current_crib_sum: int, current_crib_cards: list[str],
                                 player_hand: list[str]) -> list[tuple[str, torch.Tensor]]:
         """
         Get the processed output of the network for a given input.
@@ -50,10 +50,8 @@ class BasePeggingNet(nn.Module):
         Arguments:
             player_score: The neural network player's score.
             opponent_score: The opponent's score.
-            is_dealer: Whether the neural network player is the dealer.
             current_crib_sum: The total of the current crib.
             current_crib_cards: The played cards in the current crib.
-            starter_card: The starter card.
             player_hand: The neural network player's cards in hand.
 
         ------
@@ -63,7 +61,7 @@ class BasePeggingNet(nn.Module):
         """
 
         encoded_state = StateEncoder.encode_state_for_pegging_phase(
-            player_score, opponent_score, is_dealer, current_crib_sum, current_crib_cards, starter_card, player_hand
+            player_score, opponent_score, current_crib_sum, current_crib_cards, player_hand
         )
 
         outputs = self.net(torch.tensor(encoded_state, dtype=torch.float32, device=self.device))
@@ -85,8 +83,8 @@ class BasePeggingNet(nn.Module):
         return actions
 
 
-    def get_pegging_action(self, player_score: int, opponent_score: int, is_dealer: bool,
-                           current_crib_sum: int, current_crib_cards: list[str], starter_card: str,
+    def get_pegging_action(self, player_score: int, opponent_score: int,
+                           current_crib_sum: int, current_crib_cards: list[str],
                            player_hand: list[str]) -> tuple[str, torch.Tensor]:
         """
         Choose which card to play based on the given state.
@@ -96,10 +94,8 @@ class BasePeggingNet(nn.Module):
         Arguments:
             player_score: The neural network player's score.
             opponent_score: The opponent's score.
-            is_dealer: Whether the neural network player is the dealer.
             current_crib_sum: The total of the current crib.
             current_crib_cards: The played cards in the current crib.
-            starter_card: The starter card.
             player_hand: The neural network player's cards in hand.
 
         ------
@@ -108,8 +104,8 @@ class BasePeggingNet(nn.Module):
             The card chosen to be played along with its confidence score.
         """
 
-        distribution = self.get_distribution_policy(player_score, opponent_score, is_dealer, current_crib_sum,
-                                                    current_crib_cards, starter_card, player_hand)
+        distribution = self.get_distribution_policy(player_score, opponent_score, current_crib_sum,
+                                                    current_crib_cards, player_hand)
         best_card = max(distribution, key = lambda x: x[1].item())
         return best_card[0], best_card[1]
 

@@ -65,9 +65,8 @@ class StateEncoder:
         return encoded_state
 
     @classmethod
-    def encode_state_for_pegging_phase(cls, player_score: int, opponent_score: int, is_dealer: bool,
-                                       current_crib_sum: int, current_crib_cards: list[str], starter_card: str,
-                                       player_hand: list[str]) -> list[float | int]:
+    def encode_state_for_pegging_phase(cls, player_score: int, opponent_score: int, current_crib_sum: int,
+                                       current_crib_cards: list[str], player_hand: list[str]) -> list[float | int]:
         """
         Encode the state during the pegging phase into a format recognizable for a neural network.
 
@@ -76,18 +75,15 @@ class StateEncoder:
         Arguments:
             player_score: The neural network player's score.
             opponent_score: The opponent's score.
-            is_dealer: Whether the neural network player is the dealer.
             current_crib_sum: The total of the current crib.
             current_crib_cards: The played cards in the current crib.
-            starter_card: The starter card.
             player_hand: The neural network player's cards in hand.
 
         ------
 
         Returns:
-            The encoded state in a vector of 208 values (1 float-normalized value for each player's score,
-            one binary value indicating the dealer, one float-normalized value for the current crib sum,
-            7 * 17 binary values for the cards in the current crib, 17 binary values for the starter card
+            The encoded state in a vector of 190 values (1 float-normalized value for each player's score,
+            one float-normalized value for the current crib sum, 7 * 17 binary values for the cards in the current crib,
             and 4 * 17 binary values for the players cards in hand).
         """
 
@@ -95,7 +91,7 @@ class StateEncoder:
         opponent_score_val = min(opponent_score, 121) / 121
         current_crib_sum_val = current_crib_sum / 31
 
-        encoded_state = [player_score_val, opponent_score_val, int(is_dealer), current_crib_sum_val]
+        encoded_state = [player_score_val, opponent_score_val, current_crib_sum_val]
 
         for card_idx in range(7):
             if card_idx >= len(current_crib_cards):
@@ -103,8 +99,6 @@ class StateEncoder:
             else:
                 encoded_card = cls.encode_card(current_crib_cards[card_idx])
                 encoded_state.extend(encoded_card)
-
-        encoded_state.extend(cls.encode_card(starter_card))
 
         for card_idx in range(4):
             if card_idx >= len(player_hand):

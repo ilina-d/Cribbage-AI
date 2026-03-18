@@ -1,6 +1,6 @@
 from torch import nn
 
-from .base_pegging_net import BasePeggingNet
+from utils.neural_nets.pegging_nets.base_pegging_net import BasePeggingNet
 
 
 class PeggingNetV2(BasePeggingNet):

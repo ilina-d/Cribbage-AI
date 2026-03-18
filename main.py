@@ -1,67 +1,76 @@
 from utils.assets import Display
 from utils.game import Game
 from utils.simulator import Simulator
+from utils.helpers import DiscardEvaluator, Scoring
 
-from utils.players import RandomPlayer, UserPlayer, DAPNPlayer, DAPRPlayer, DNPRPlayer
-from utils.neural_nets import DiscardTrainer, PeggingTrainer, \
-    DiscardNetV1, DiscardNetV2, DiscardNetV3, PeggingNetV1, PeggingNetV2
+from utils.players import *
+from utils.neural_nets import *
+
+from utils.neural_nets.discard_nets.DNT_Deep_Leaky import DNT_Deep_Leaky
+from utils.neural_nets.discard_nets.DNT_Deep_Relu import DNT_Deep_Relu
+from utils.neural_nets.discard_nets.DNT_Deep_Selu import DNT_Deep_Selu
+from utils.neural_nets.discard_nets.DNT_Deep_Sigmoid import DNT_Deep_Sigmoid
+from utils.neural_nets.discard_nets.DNT_Deep_Tanh import DNT_Deep_Tanh
+
+from utils.neural_nets.discard_nets.DNT_Shallow_Leaky import DNT_Shallow_Leaky
+from utils.neural_nets.discard_nets.DNT_Shallow_Relu import DNT_Shallow_Relu
+from utils.neural_nets.discard_nets.DNT_Shallow_Selu import DNT_Shallow_Selu
+from utils.neural_nets.discard_nets.DNT_Shallow_Sigmoid import DNT_Shallow_Sigmoid
+from utils.neural_nets.discard_nets.DNT_Shallow_Tanh import DNT_Shallow_Tanh
+
+from utils.neural_nets.trainers.DTT_StepAfterBackward import DTT_StepAfterBackward
+from utils.neural_nets.trainers.DTT_StepAfterBackwardCubed import DTT_StepAfterBackwardCubed
+from utils.neural_nets.trainers.DTT_ZeroBackwardStep import DTT_ZeroBackwardStep
+from utils.neural_nets.trainers.DTT_ZeroBackwardStepCubed import DTT_ZeroBackwardStepCubed
+from utils.neural_nets.trainers.DTT_ZeroStepBackward import DTT_ZeroStepBackward
+from utils.neural_nets.trainers.DTT_ZeroStepBackwardCubed import DTT_ZeroStepBackwardCubed
 
 
 if __name__ == '__main__':
 
-    net = PeggingNetV2()
-    PeggingTrainer.train(
-        pegging_network = net,
-        lr = 1e-4,
-        wd = 1e-3,
-        epochs = 10_000,
-        opponent = RandomPlayer(),
-        batch_size = 100,
-        pool_size = 20,
-        num_workers = 24,
-        early_stop = False
-    )
+    trainer_args = {
+        'lr': 0.001,
+        'wd': 0.000001,
+        'epochs': 10_000,
+        'batch_size': 10,
+        'pool_size': 3,
+        'early_stop': False,
+        'play_style': 'recommended',
+        'alpha': 1,
+        'alpha_step': 10,
+        'alpha_decay': 0.002,
+    }
 
-    PeggingTrainer.save(
-        pegging_network = net,
-        file_name = 'PNV2_1M_RandomOpponent',
-        comment = 'PeggingNetV2 plays 1M games against RandomPlayer.'
-    )
+    trainers = [
+        DTT_StepAfterBackward, DTT_StepAfterBackwardCubed,
+        DTT_ZeroBackwardStep, DTT_ZeroBackwardStepCubed,
+        DTT_ZeroStepBackward, DTT_ZeroStepBackwardCubed
+    ]
 
-    net = DiscardNetV3()
-    DiscardTrainer.train(
-        discard_network = net,
-        lr = 1e-4,
-        wd = 1e-3,
-        epochs = 10_000,
-        batch_size = 100,
-        pool_size = 20,
-        num_workers = 24,
-        play_style = 'recommended',
-        alpha = 1,
-        alpha_step = 100,
-        alpha_decay = 0.02,
-        early_stop = False
-    )
+    networks_deep = [DNT_Deep_Leaky, DNT_Deep_Relu, DNT_Deep_Selu, DNT_Deep_Sigmoid, DNT_Deep_Tanh]
+    networks_shallow = [DNT_Shallow_Leaky, DNT_Shallow_Relu, DNT_Shallow_Selu, DNT_Shallow_Sigmoid, DNT_Shallow_Tanh]
 
-    DiscardTrainer.save(
-        discard_network = net,
-        file_name = 'DNV3_1M_Supervised_recommended',
-        comment = 'DiscardNetV3 plays 1M games with "recommended" play-style and coaching. '
-                  'Starting with alpha=1 and lowering it by 0.02 every 100 epochs, '
-                  'reaching alpha=0 at the 5000th epoch.'
-    )
+    for network in networks_deep:
+        for trainer in trainers:
+
+            net = network()
+            net_name = net.__class__.__name__
+            trainer_name = trainer.__name__
+
+            trainer.train(discard_network = net, **trainer_args)
+            trainer.save(
+                net,
+                file_name = f'TEST_{net_name}__{trainer_name}',
+                comment = f'{net_name} trained for 100K games with {trainer_name}'
+            )
 
     input('... preventing program from continuing by waiting for input ...\n'
           '... full-screen the terminal before continuing ...')
 
-    pegging_net = PeggingNetV1()
-    pegging_net.load_weights(file_name = "PNV1_1K_VSRandom")
-
     game = Game(
-        player1 = RandomPlayer(),
+        player1 = UserPlayer(),
         player2 = RandomPlayer(),
-        wait_after_move = 500,
+        wait_after_move = 'input',
         wait_after_info = True,
         show_opponents_hand = False,
         visuals = True,

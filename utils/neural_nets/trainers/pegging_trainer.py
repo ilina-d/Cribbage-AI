@@ -99,7 +99,7 @@ def _run_episode(state: dict[str, ...], pegging_net: BasePeggingNet,
             current_crib_sum = crib_sums[current_crib_idx]
             current_crib_cards = cribs[current_crib_idx]
             distribution = pegging_net.get_distribution_policy(
-                score1, score2, is_dealer, current_crib_sum, current_crib_cards, starter_card, player_hand
+                score1, score2, current_crib_sum, current_crib_cards, player_hand
             )
 
             log_probs = torch.stack([card[1] for card in distribution])
@@ -273,7 +273,7 @@ class PeggingTrainer:
                         actual_reward += points
                         rewards.insert(0, actual_reward)
 
-                    loss = torch.tensor(0.0, requires_grad=True)
+                    loss = torch.tensor(0.0)
                     for confidence, reward in zip(action_confs, rewards):
                         loss = loss + (-confidence * reward)
 
