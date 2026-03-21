@@ -16,8 +16,8 @@ class Game:
     called_go: bool = False
 
 
-    def __init__(self, player1: BasePlayer, player2: BasePlayer, visuals: bool = True,
-                 wait_after_move: int | str | None = 'input', wait_after_info: bool = True,
+    def __init__(self, player1: BasePlayer, player2: BasePlayer, first_dealer: str = None,
+                 visuals: bool = True, wait_after_move: int | str | None = 'input', wait_after_info: bool = True,
                  show_opponents_hand: bool = False, measure_statistics: bool = False) -> None:
         """
         Create and initialize an instance of the Game class.
@@ -41,6 +41,7 @@ class Game:
         Arguments:
             player1: The first player object.
             player2: The second player object.
+            first_dealer: Which player starts as the dealer ("player1" or "player2").
             visuals: Whether to display the game flow in the terminal.
             wait_after_move: The method for waiting after each move.
             wait_after_info: Whether to wait for input after scoring is shown.
@@ -53,6 +54,11 @@ class Game:
             if isinstance(player1, UserPlayer):
                 raise Exception("Both players cannot be a UserPlayer instance.")
             self.player1, self.player2 = player2, player1
+
+        if first_dealer:
+            # self.prepare_new_round() switches the dealer, so we assign the opposite of the given first dealer
+            first_dealer = player1 if first_dealer == 'player2' else player2
+        self.first_dealer = first_dealer
 
         self.visuals = visuals
         self.display = Display(self.player1, self.player2, show_opponents_hand, display_enabled = visuals)
@@ -89,7 +95,7 @@ class Game:
             'current_crib_idx' : 0,
             'crib_sums': [0, 0, 0],
             'starter_card': None,
-            'dealer' : random.choice([self.player1, self.player2]),
+            'dealer' : random.choice([self.player1, self.player2]) if self.first_dealer is None else self.first_dealer,
             'player1' : self.player1,
             'player2' : self.player2
         }

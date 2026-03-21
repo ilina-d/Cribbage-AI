@@ -1,6 +1,32 @@
 # TODO
+- Add `net.train()` to both trainers.
+- Update trainers to not change `num_workers` since `multiprocessing.Pool` already handles load balancing.
 - Change state pool distribution in `PeggingTrainer`.
   Currently `recommended` is best, with `aggressive` and maybe `sure_bet` close behind.
+- Change how `imitation_loss` works:
+  ```python
+  rely_on_coach = random.choices([True, False], [alpha, 1 - alpha], k = 1)
+  distribution = discard_network.get_distribution_policy(...)
+  
+  if rely_on_coach:
+      card1, card2 = state['best_cards']
+      confidence = discard_network.get_combo_confidence(...)
+  else:
+      log_probs = torch.stack([combo[2] for combo in distribution])
+      probs = torch.exp(log_probs)
+
+      chosen_combo = distribution[torch.multinomial(probs, 1).item()]
+      card1, card2, confidence = chosen_combo[0], chosen_combo[1], chosen_combo[2]
+  
+  hand_score = ...
+  crib_score = ...
+  reward = hand_score + crib_score if is_dealer else hand_score - crib_score
+  baseline = state['baseline']
+  advantage = reward - baseline
+
+  loss = -confidence * advantage
+  ...
+  ```
 - Implement early stopping if needed.
 - Implement different neural network structures and player agents.
 - Beautify scoring info when displayed in the terminal.
@@ -20,9 +46,7 @@
 
 ---
 # Latest Changes
-Prepared code for testing of DiscardNets and training methods.
+Added multiprocessing to Simulator and option to choose first dealer in Game.
 
-- Reorganized `utils/neural_nets/`.
-- Removed `is_dealer` and `starter_card` from state encoding for `PeggingNets`.
-- Added various `DiscardNets` and `DiscardTrainers` for testing neural network structures and training methods.
-- Removed debug argument in `DiscardTrainer`.
+- Added option to choose the initial dealer in `Game`.
+- Implemented `Simulator` multiprocessing.
