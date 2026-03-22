@@ -18,22 +18,16 @@ from utils.neural_nets.discard_nets.DNT_Shallow_Selu import DNT_Shallow_Selu
 from utils.neural_nets.discard_nets.DNT_Shallow_Sigmoid import DNT_Shallow_Sigmoid
 from utils.neural_nets.discard_nets.DNT_Shallow_Tanh import DNT_Shallow_Tanh
 
-from utils.neural_nets.trainers.DTT_StepAfterBackward import DTT_StepAfterBackward
-from utils.neural_nets.trainers.DTT_StepAfterBackwardCubed import DTT_StepAfterBackwardCubed
-from utils.neural_nets.trainers.DTT_ZeroBackwardStep import DTT_ZeroBackwardStep
-from utils.neural_nets.trainers.DTT_ZeroBackwardStepCubed import DTT_ZeroBackwardStepCubed
-from utils.neural_nets.trainers.DTT_ZeroStepBackward import DTT_ZeroStepBackward
-from utils.neural_nets.trainers.DTT_ZeroStepBackwardCubed import DTT_ZeroStepBackwardCubed
 
 
 if __name__ == '__main__':
 
     sim = Simulator(
-        player1 = RandomPlayer(),
-        player2 = RandomPlayer(),
-        num_simulations = 10000,
+        player1 = DAPGPlayer(play_style = 'recommended'),
+        player2 = DAPRPlayer(play_style = 'recommended'),
+        num_simulations = 1000,
         num_workers = 999,
-        measure_performance = True
+        measure_performance = False
     )
 
     sim.start()

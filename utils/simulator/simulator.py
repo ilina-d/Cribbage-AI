@@ -106,42 +106,50 @@ class Simulator:
                 'player1' : self.player1, 'player2' : self.player2, 'first_dealer' : 'player2'
             }] * (self.num_simulations - (self.num_simulations // 2)))
 
-            for n, result in enumerate(pool.imap_unordered(_get_game_data, _sim_args), start = 1):
-                winner = result['winner']
-                sum_game_times += result['time_taken']
-                sum_game_rounds += result['total_rounds']
-                sum_avg_score_diffs += result['avg_score_diff']
-                sum_avg_score_diffs_d1 += result['avg_score_diff_dealer1']
-                sum_avg_score_diffs_d2 += result['avg_score_diff_dealer2']
+            try:
+                for n, result in enumerate(pool.imap_unordered(_get_game_data, _sim_args), start = 1):
+                    winner = result['winner']
+                    sum_game_times += result['time_taken']
+                    sum_game_rounds += result['total_rounds']
+                    sum_avg_score_diffs += result['avg_score_diff']
+                    sum_avg_score_diffs_d1 += result['avg_score_diff_dealer1']
+                    sum_avg_score_diffs_d2 += result['avg_score_diff_dealer2']
 
-                if winner == 'player1':
-                    player1_wins += 1
-                    if result['first_dealer'] == 'player1':
-                        dealer1_wins += 1
-                else:
-                    player2_wins += 1
-                    if result['first_dealer'] == 'player2':
-                        dealer2_wins += 1
+                    if winner == 'player1':
+                        player1_wins += 1
+                        if result['first_dealer'] == 'player1':
+                            dealer1_wins += 1
+                    else:
+                        player2_wins += 1
+                        if result['first_dealer'] == 'player2':
+                            dealer2_wins += 1
 
-                percent_done = (n / self.num_simulations) * 100
-                estimated_tl = (sum_game_times / n) * (self.num_simulations - n)
-                if estimated_tl == 0:
-                    estimated_tl = f'done'
-                elif estimated_tl > 3600:
-                    estimated_tl = f'~{estimated_tl // 3600} hours'
-                elif estimated_tl > 60:
-                    estimated_tl = f'~{estimated_tl // 60} minutes'
-                else:
-                    estimated_tl = f'~{int(estimated_tl)} seconds'
+                    percent_done = (n / self.num_simulations) * 100
+                    estimated_tl = (sum_game_times / n) * (self.num_simulations - n)
+                    estimated_tl /= self.num_workers
+                    if estimated_tl == 0:
+                        estimated_tl = f'done'
+                    elif estimated_tl > 3600:
+                        estimated_tl = f'~{estimated_tl // 3600} hours'
+                    elif estimated_tl > 60:
+                        estimated_tl = f'~{estimated_tl // 60} minutes'
+                    else:
+                        estimated_tl = f'~{round(estimated_tl)} seconds'
 
-                print(
-                    '\r\033[K'
-                    f'[ SIMULATOR ] : Running simulations... '
-                    f'{str(round(percent_done, 2)) + "%":<6} '
-                    f'<{"=" * int(percent_done)}{"-" * int(100 - int(percent_done))}> '
-                    f'| P1 ({player1_wins}) vs ({player2_wins}) P2 '
-                    f'| ETL: {estimated_tl}', end = ''
-                )
+                    print(
+                        '\r\033[K'
+                        f'[ SIMULATOR ] : Running simulations... '
+                        f'{str(round(percent_done, 2)) + "%":<6} '
+                        f'<{"=" * int(percent_done)}{"-" * int(100 - int(percent_done))}> '
+                        f'| P1 ({player1_wins}) vs ({player2_wins}) P2 '
+                        f'| ETL: {estimated_tl}', end = ''
+                    )
+            except:
+                pool.terminate()
+                raise Exception("The pool is closed.")
+            finally:
+                pool.close()
+                pool.join()
 
         dealer1_win_percent = dealer1_wins / player1_wins * 100 if player1_wins != 0 else 0
         dealer2_win_percent = dealer2_wins / player2_wins * 100 if player2_wins != 0 else 0

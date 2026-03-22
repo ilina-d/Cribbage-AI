@@ -83,6 +83,28 @@ class BasePeggingNet(nn.Module):
         return actions
 
 
+    @staticmethod
+    def get_card_confidence(distribution: list[tuple[str, torch.Tensor]], card: str) -> torch.Tensor | None:
+        """
+        Get the confidence for a specific card from the given network output.
+
+        ------
+
+        Arguments:
+            distribution: A processed output from the network to search in.
+            card: The chosen card.
+
+        ------
+
+        Returns:
+            The confidence score for the specified card or None if not found.
+        """
+
+        for output in distribution:
+            if card == output[0]:
+                return output[1]
+
+
     def get_pegging_action(self, player_score: int, opponent_score: int,
                            current_crib_sum: int, current_crib_cards: list[str],
                            player_hand: list[str]) -> tuple[str, torch.Tensor]:

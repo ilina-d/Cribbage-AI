@@ -75,7 +75,7 @@ class BaseDiscardNet(nn.Module):
 
 
     @staticmethod
-    def get_combo_confidence(discard_combos: list[tuple[str, str, torch.Tensor]],
+    def get_combo_confidence(distribution: list[tuple[str, str, torch.Tensor]],
                              card1: str, card2: str) -> torch.Tensor | None:
         """
         Get the confidence for a specific discard combination from the given network output.
@@ -83,7 +83,7 @@ class BaseDiscardNet(nn.Module):
         ------
 
         Arguments:
-            discard_combos: A processed output from the network to search in.
+            distribution: A processed output from the network to search in.
             card1: First card of the discard combination.
             card2: Second card of the discard combination.
 
@@ -93,7 +93,7 @@ class BaseDiscardNet(nn.Module):
             The confidence score for the specified discard combination or None if not found.
         """
 
-        for combo in discard_combos:
+        for combo in distribution:
             if card1 in combo and card2 in combo:
                 return combo[2]
 
