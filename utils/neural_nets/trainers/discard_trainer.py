@@ -208,6 +208,9 @@ class DiscardTrainer:
 
                     loss.backward()
 
+                    # if inflate_advantage:
+                    #     torch.nn.utils.clip_grad_norm_(net.parameters(), max_norm = 5.0)
+
                     if not accumulate_loss:
                         optimizer.step()
 
@@ -216,6 +219,8 @@ class DiscardTrainer:
                     total_advantage += advantage
 
                 if accumulate_loss:
+                    # if inflate_advantage:
+                    #     torch.nn.utils.clip_grad_norm_(net.parameters(), max_norm = 5.0)
                     optimizer.step()
 
                 scheduler.step()
@@ -227,11 +232,13 @@ class DiscardTrainer:
                 if alpha_step > 0 and epoch % alpha_step == 0 and alpha > 0:
                     alpha = max(alpha - alpha_decay, 0)
 
-                cls._log(f'* Epoch: {epoch:<{epoch_spaces}}  |'
-                         f'  Avg L: {avg_loss:<4.8f}'
-                         f'  Avg R: {avg_reward:<4.8f}'
-                         f'  Avg A: {avg_advantage:<4.8f}'
-                         f'  Alpha: {alpha:<4.8f}')
+                cls._log(
+                    f'* Epoch: {epoch:<{epoch_spaces}} '
+                    f'| Avg L: {avg_loss:<15.8f} '
+                    f'| Avg R: {avg_reward:<15.8f} '
+                    f'| Avg A: {avg_advantage:<15.8f} '
+                    f'| Alpha: {alpha:<15.8f}'
+                )
 
         cls._log('Training finished.')
 

@@ -16,16 +16,9 @@
 
 ---
 # Latest Changes
-Trainer updates and Simulator fixes.
+Bug fixes and minor changes.
 
-- Adjusted time estimate in Simulator.
-- Added handling of zombie processes. 
-- Improved supervised training and the way imitation loss is interpreted.
-- Added supervised training option for `PeggingTrainer`.
-- Fixed gradient updates in trainers and added option for accumulating loss per batch.
-- Added option to inflate the advantage when training.
-- Added `get_card_confidence` function to `BasePeggingNet`.
-- Removed manual changes to `num_workers` in the trainers.
-- Altered the distribution of the state pool for the `PeggingTrainer`.
-- Removed the option for `early_stop` in both trainers.
+- Added gradient clipping to both trainers when `inflate_advantage == True`. The code is commented out for now.
+- Fixed progress printing in both trainers not aligning each "column" properly.
+- Removed all `DNT` (Discard Network Tests).
 - Updated `TODO`.

@@ -8,7 +8,8 @@ from utils.helpers import DiscardEvaluator, CardDeck, Scoring
 
 from multiprocessing import Pool, cpu_count
 
-from utils.players import BasePlayer, DAPGPlayer
+from utils.players import BasePlayer
+from utils.players.dapg_player import DAPGPlayer
 
 
 def _get_batch_data(args: dict[str, ...]) -> dict[str, ...]:
@@ -298,6 +299,9 @@ class PeggingTrainer:
 
                     loss.backward()
 
+                    # if inflate_advantage:
+                    #     torch.nn.utils.clip_grad_norm_(net.parameters(), max_norm = 5.0)
+
                     if not accumulate_loss:
                         optimizer.step()
 
@@ -306,6 +310,8 @@ class PeggingTrainer:
                     total_points += rewards[0] if rewards else 0
 
                 if accumulate_loss:
+                    # if inflate_advantage:
+                    #     torch.nn.utils.clip_grad_norm_(net.parameters(), max_norm = 5.0)
                     optimizer.step()
                 scheduler.step()
 
@@ -316,11 +322,13 @@ class PeggingTrainer:
                 if alpha_step > 0 and epoch % alpha_step == 0 and alpha > 0:
                     alpha = max(alpha - alpha_decay, 0)
 
-                cls._log(f'* Epoch: {epoch:<{epoch_spaces}}  |'
-                         f'  Avg L: {avg_loss:<6.8f}'
-                         f'  Avg R: {avg_reward:<4.8f}'
-                         f'  Avg P: {avg_points:<4.8f}'
-                         f'  Alpha: {alpha:<4.8f}')
+                cls._log(
+                    f'* Epoch: {epoch:<{epoch_spaces}} '
+                    f'| Avg L: {avg_loss:<15.8f} '
+                    f'| Avg R: {avg_reward:<15.8f} '
+                    f'| Avg P: {avg_points:<15.8f} '
+                    f'| Alpha: {alpha:<15.8f}'
+                )
 
         cls._log('Training finished.')
 
