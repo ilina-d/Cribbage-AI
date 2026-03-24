@@ -8,7 +8,7 @@ from utils.helpers import StateEncoder, CardDeck
 class BasePeggingNet(nn.Module):
     """ Base neural network for training pegging policies. """
 
-    INPUT_SIZE = 190
+    INPUT_SIZE = StateEncoder.LENGTH_PEGGING_INPUT
     OUTPUT_SIZE = 5
     device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
 

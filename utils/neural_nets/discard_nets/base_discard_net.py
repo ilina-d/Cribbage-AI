@@ -9,7 +9,7 @@ from utils.helpers import StateEncoder
 class BaseDiscardNet(nn.Module):
     """ Base neural network for training discard policies. """
 
-    INPUT_SIZE = 105
+    INPUT_SIZE = StateEncoder.LENGTH_DISCARD_INPUT
     OUTPUT_SIZE = 15
     DISCARD_COMBO_ORDER = tuple(enumerate(combinations(range(6), 2)))
     device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')

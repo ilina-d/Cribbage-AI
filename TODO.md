@@ -16,9 +16,8 @@
 
 ---
 # Latest Changes
-Bug fixes and minor changes.
+Implementation of a second state encoder.
 
-- Added gradient clipping to both trainers when `inflate_advantage == True`. The code is commented out for now.
-- Fixed progress printing in both trainers not aligning each "column" properly.
-- Removed all `DNT` (Discard Network Tests).
+- Implemented SimpleStateEncoder that reduces the size of the input states.
+- Made the BasePeggingNet and BaseDiscardNet work with any given encoder.
 - Updated `TODO`.
