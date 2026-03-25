@@ -153,13 +153,15 @@ class DiscardTrainer:
         net.train()
 
         with Pool(processes = num_workers) as pool:
+            batch_data_args = [{'play_style': play_style} for _ in range(pool_size * epochs)]
+            state_pool_generator = pool.imap(_get_batch_data, batch_data_args, chunksize = pool_size)
+
             for epoch in range(1, epochs + 1):
                 total_loss, total_reward, total_advantage = 0, 0, 0
                 if accumulate_loss:
                     optimizer.zero_grad()
 
-                batch_data_args = [{'play_style': play_style} for _ in range(pool_size)]
-                state_pool = pool.map(_get_batch_data, batch_data_args)
+                state_pool = [next(state_pool_generator) for _ in range(pool_size)]
 
                 for _ in range(batch_size):
                     state = random.choice(state_pool)
@@ -168,7 +170,7 @@ class DiscardTrainer:
                     is_dealer = state['is_dealer']
                     starter_card = state['starter_card']
 
-                    rely_on_coach = random.choices([True, False], [alpha, 1 - alpha], k=1)
+                    rely_on_coach = random.choices([True, False], [alpha, 1 - alpha], k = 1)[0]
                     distribution = discard_network.get_distribution_policy(
                         state['score1'], state['score2'], is_dealer, hand_cards
                     )

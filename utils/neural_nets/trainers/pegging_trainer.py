@@ -112,7 +112,7 @@ def _run_episode(state: dict[str, ...], pegging_net: BasePeggingNet,
                 score1, score2, current_crib_sum, current_crib_cards, player_hand
             )
 
-            rely_on_coach = random.choices([True, False], [alpha, 1 - alpha], k=1)
+            rely_on_coach = random.choices([True, False], [alpha, 1 - alpha], k = 1)[0]
             if rely_on_coach:
                 coach.cards = player_hand
 

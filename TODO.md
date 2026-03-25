@@ -1,4 +1,5 @@
 # TODO
+- Optimize `PeggingTrainer` with the same method used in `DiscardTrainer`.
 - Implement different neural network structures and player agents.
 - Beautify scoring info when displayed in the terminal.
 
@@ -16,8 +17,11 @@
 
 ---
 # Latest Changes
-Implementation of a second state encoder.
+Major bug fix, optimizations, and testing additions.
 
-- Implemented SimpleStateEncoder that reduces the size of the input states.
-- Made the BasePeggingNet and BaseDiscardNet work with any given encoder.
-- Updated `TODO`.
+- Fixed a major oversight in both `DiscardTrainer` and `PeggingTrainer` always choosing to `rely_on_coach`.
+- Optimized the `DiscardTrainer` by simultaneously training and generating state pools.
+- Added 20 Discard neural network structures for testing.
+- Added `SeededDiscardTrainer` for testing.
+- Normalized card values in `SimpleStateEncoder` for testing. May need to revert the encoding back.
+- Updated TODO.

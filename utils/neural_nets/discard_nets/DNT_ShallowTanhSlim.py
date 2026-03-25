@@ -3,33 +3,22 @@ from torch import nn
 from .base_discard_net import BaseDiscardNet
 
 
-class DiscardNetV2(BaseDiscardNet):
-    """
-    Neural network for discarding cards.
-
-    ------
-
-    Network structure:
-
-    INPUT
-    -> Linear(512), ReLU
-    -> Linear(256), ReLU
-    -> Linear(128), ReLU
-    OUTPUT
-    """
+class DNT_ShallowTanhSlim(BaseDiscardNet):
+    """ Neural network for discarding cards. """
 
     def __init__(self) -> None:
         super().__init__()
         self.net = nn.Sequential(
             nn.Linear(self.INPUT_SIZE, 512),
-            nn.ReLU(),
+            nn.Tanh(),
             nn.Linear(512, 256),
-            nn.ReLU(),
+            nn.Tanh(),
             nn.Linear(256, 128),
-            nn.ReLU(),
+            nn.Tanh(),
             nn.Linear(128, self.OUTPUT_SIZE)
         )
+
         self.net.to(self.device)
 
 
-__all__ = ['DiscardNetV2']
+__all__ = ['DNT_ShallowTanhSlim']
