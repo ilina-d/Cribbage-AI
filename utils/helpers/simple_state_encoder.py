@@ -26,8 +26,8 @@ class StateEncoder:
             the suit, and one integer value for the rank).
         """
 
-        card_rank = CardDeck.get_card_rank(card) / 13
-        card_worth = CardDeck.get_card_worth(card) / 10
+        card_rank = CardDeck.get_card_rank(card)
+        card_worth = CardDeck.get_card_worth(card)
         card_suit = card[1]
 
         card_suit_idx = CardDeck.CARD_SUITS.index(card_suit)

@@ -11,25 +11,20 @@ class DNT_DeepSeluWide(BaseDiscardNet):
         self.net = nn.Sequential(
             nn.Linear(self.INPUT_SIZE, 1024),
             nn.SELU(),
-            nn.Linear(1024, 1024),
-            nn.SELU(),
 
             nn.Linear(1024, 512),
-            nn.SELU(),
-            nn.Linear(512, 512),
             nn.SELU(),
 
             nn.Linear(512, 256),
             nn.SELU(),
-            nn.Linear(256, 256),
-            nn.SELU(),
 
             nn.Linear(256, 128),
             nn.SELU(),
-            nn.Linear(128, 128),
+
+            nn.Linear(128, 64),
             nn.SELU(),
 
-            nn.Linear(128, self.OUTPUT_SIZE)
+            nn.Linear(64, self.OUTPUT_SIZE)
         )
 
         for layer in self.net:

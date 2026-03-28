@@ -7,7 +7,7 @@ from torch import optim
 from utils.neural_nets import BaseDiscardNet
 
 
-class SeededDiscardTrainer:
+class DiscardTrainerPreLoaded:
     """ Neural network trainer for the discarding phase. """
 
     BEST_HAND_SCORE = 29  # four 5s and a Jack with the same suit as the starter card
@@ -15,13 +15,6 @@ class SeededDiscardTrainer:
     BEST_OUTCOME = 53     # best hand + 6644 in crib
     WORST_OUTCOME = 0 - BEST_CRIB_SCORE  # nothing scored in hand
     _training_logs: str = ''
-    total_state_pool: list[dict[str, ...]] = []
-
-
-    @classmethod
-    def load_state_pool(cls, seed: int) -> None:
-        with open(f'state_pool_seed{seed}.json', 'r') as file:
-            cls.total_state_pool = json.load(file)
 
 
     @classmethod
@@ -40,10 +33,9 @@ class SeededDiscardTrainer:
 
 
     @classmethod
-    def train(cls, discard_network: BaseDiscardNet, lr: float, wd: float, epochs: int, batch_size: int = 32,
-              pool_size: int = 8, play_style: str = 'recommended', num_workers: int = 1,
-              alpha: float = 0.0, alpha_decay: float = 0.95, alpha_step: int = 10,
-              accumulate_loss: bool = False, inflate_advantage: bool = False) -> None:
+    def train(cls, discard_network: BaseDiscardNet, datasets: list[str], lr: float, wd: float, epochs: int,
+              batch_size: int = 32, pool_size: int = 8, alpha: float = 0.0, alpha_decay: float = 0.95,
+              alpha_step: int = 10, accumulate_loss: bool = False, inflate_advantage: bool = False) -> None:
         """
         Train the given discard neural network using reinforced supervised or unsupervised learning.
 
@@ -67,15 +59,12 @@ class SeededDiscardTrainer:
             epochs: The number of epochs.
             batch_size: The number of batches per epoch.
             pool_size: The number of sample states to generate per batch.
-            play_style: The play style the net should be trained in.
-                        The same play style is used to calculate a reward baseline even when unsupervised.
-                        Defaults to "recommended".
             alpha: How reliant the network is on the given play-style initially.
             alpha_decay: By how much to reduce the network's dependency of the given play-style.
             alpha_step: How often to decay alpha in epochs.
-            num_workers: How many cores to use for training.
             accumulate_loss: Whether to accumulate gradient loss within a batch before stepping.
             inflate_advantage: Whether to inflate the calculated advantage.
+            datasets: List of dataset names to use as state pools during training.
 
         ------
 
@@ -97,12 +86,12 @@ class SeededDiscardTrainer:
 
         cls._log(
             f'{discard_network.__class__.__name__} Training Details:\n'
+            f'* Datasets: {", ".join(datasets)}'
             f'* Learning Rate: {lr}\n'
             f'* Weight Decay: {wd}\n'
             f'* Epochs: {epochs}\n'
             f'* Batch Size: {batch_size}\n'
             f'* Pool Size: {pool_size}\n'
-            f'* Num Workers: {num_workers}\n'
             f'\n'
             f'* Accumulate loss: {accumulate_loss}\n'
             f'* Inflated advantage: {inflate_advantage}\n'
@@ -113,6 +102,14 @@ class SeededDiscardTrainer:
             f'* Alpha Step: {alpha_step}\n\n'
         )
 
+        total_state_pool = []
+        for dataset in datasets:
+            cls._log(f'Preloading states from "{dataset}.json"...')
+            with open(f'datasets/discard_datasets/{dataset}.json', 'r') as file:
+                data = json.load(file)
+                total_state_pool.extend(data)
+        total_state_pool_len = len(total_state_pool)
+
         cls._log(f'Training with {discard_network.device}...')
         net.train()
 
@@ -122,14 +119,21 @@ class SeededDiscardTrainer:
             if accumulate_loss:
                 optimizer.zero_grad()
 
+            state_pool_count += 1
+            idx1 = state_pool_count * pool_size
+            idx2 = state_pool_count * pool_size + pool_size - 1
+
+            if idx1 >= total_state_pool_len or idx2 >= total_state_pool_len:
+                cls._log(f'| {"WARNING:":<{7 + epoch_spaces}} | State pool elapsed at epoch {epoch} '
+                         f'due to slice index being out of range: total_state_pool[ {idx1} : {idx2} ].')
+                state_pool_count = 0
+                idx1 = state_pool_count * pool_size
+                idx2 = state_pool_count * pool_size + pool_size - 1
+
+            state_pool = total_state_pool[idx1 : idx2]
+
             for _ in range(batch_size):
-
-                state_pool_count += 1
-                if state_pool_count >= len(cls.total_state_pool):
-                    cls._log(f'* Epoch: {epoch:<{epoch_spaces}} | WARN: State pool elapsed at index {state_pool_count}')
-                    state_pool_count = 0
-
-                state = cls.total_state_pool[state_pool_count]
+                state = random.choice(state_pool)
                 hand_cards = state['hand_cards'].copy()
                 is_dealer = state['is_dealer']
 
@@ -231,4 +235,4 @@ class SeededDiscardTrainer:
             file.write(comment)
 
 
-__all__ = ['SeededDiscardTrainer']
+__all__ = ['DiscardTrainerPreLoaded']

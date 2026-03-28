@@ -44,7 +44,8 @@ def _get_batch_data(args: dict[str, ...]) -> dict[str, ...]:
         'crib_cards': crib_cards,
         'starter_card': starter_card,
         'best_cards': best_cards,
-        'baseline' : baseline
+        'baseline' : baseline,
+        'ranked_pairs' : ranked_pairs
     }
 
 
@@ -154,7 +155,7 @@ class DiscardTrainer:
 
         with Pool(processes = num_workers) as pool:
             batch_data_args = [{'play_style': play_style} for _ in range(pool_size * epochs)]
-            state_pool_generator = pool.imap(_get_batch_data, batch_data_args, chunksize = pool_size)
+            state_pool_generator = pool.imap_unordered(_get_batch_data, batch_data_args, chunksize = pool_size)
 
             for epoch in range(1, epochs + 1):
                 total_loss, total_reward, total_advantage = 0, 0, 0
@@ -189,15 +190,26 @@ class DiscardTrainer:
                         chosen_combo = distribution[torch.multinomial(probs, 1).item()]
                         card1, card2, confidence = chosen_combo[0], chosen_combo[1], chosen_combo[2]
 
-                    hand_cards.remove(card1)
-                    hand_cards.remove(card2)
-                    crib_cards.extend([card1, card2])
-                    hand_score = DiscardEvaluator.score_hand(hand_cards, starter_card)
-                    crib_score = DiscardEvaluator.score_crib(crib_cards, starter_card)
+                    # hand_cards.remove(card1)
+                    # hand_cards.remove(card2)
+                    # crib_cards.extend([card1, card2])
+                    # hand_score = DiscardEvaluator.score_hand(hand_cards, starter_card)
+                    # crib_score = DiscardEvaluator.score_crib(crib_cards, starter_card)
+                    #
+                    # # reward range is [-29, 53]
+                    # reward = hand_score + crib_score if is_dealer else hand_score - crib_score
+                    # baseline = state['baseline']
+                    # advantage = reward - baseline
 
-                    # reward range is [-29, 53]
-                    reward = hand_score + crib_score if is_dealer else hand_score - crib_score
-                    baseline = state['baseline']
+                    ranked_pairs = state['ranked_pairs']
+                    reward = 0
+                    for idx, pair in enumerate(reversed(ranked_pairs)):
+                        cards = pair[0]
+                        if card1 in cards and card2 in cards:
+                            reward = idx
+                            break
+
+                    baseline = 7
                     advantage = reward - baseline
 
                     if inflate_advantage:

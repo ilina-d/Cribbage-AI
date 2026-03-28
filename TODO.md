@@ -1,12 +1,11 @@
 # TODO
 - Optimize `PeggingTrainer` with the same method used in `DiscardTrainer`.
-- Implement different neural network structures and player agents.
+- Implement `PeggingTrainerPreLoaded`.
 - Beautify scoring info when displayed in the terminal.
 
 ---
 # Notes & Ideas
 - Player agents that use neural nets expect a network with preloaded weights.
-- Selu needs additional settings changed to the linear layers.
 
 ---
 # Things to Consider
@@ -17,11 +16,11 @@
 
 ---
 # Latest Changes
-Major bug fix, optimizations, and testing additions.
+Implemented new discard trainer that works with pre-generated states and other small changes.
 
-- Fixed a major oversight in both `DiscardTrainer` and `PeggingTrainer` always choosing to `rely_on_coach`.
-- Optimized the `DiscardTrainer` by simultaneously training and generating state pools.
-- Added 20 Discard neural network structures for testing.
-- Added `SeededDiscardTrainer` for testing.
-- Normalized card values in `SimpleStateEncoder` for testing. May need to revert the encoding back.
+- Implemented `DiscardTrainerPreLoaded` for training on pre-generated states.
+- Changed how `DiscardTrainer` calculates reward and advantage.
+- Removed card normalization in `SimpleStateEncoder`.
+- Removed `SeededDiscardTrainer`.
+- Minor changes in `DNT_DeepSeluSlim` and `DNT_DeepSeluWide` for testing purposes.
 - Updated TODO.
