@@ -24,8 +24,7 @@ class DNT_DeepSeluSlim(BaseDiscardNet):
             nn.Linear(64, 32),
             nn.SELU(),
 
-            nn.Linear(32, self.OUTPUT_SIZE),
-            nn.Sigmoid()
+            nn.Linear(32, self.OUTPUT_SIZE)
         )
 
         for layer in self.net:

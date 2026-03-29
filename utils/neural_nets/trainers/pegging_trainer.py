@@ -263,18 +263,19 @@ class PeggingTrainer:
         net.train()
 
         with Pool(processes = num_workers) as pool:
+            num_40p = int(0.4 * pool_size) * epochs
+            num_20p = int(0.2 * pool_size) * epochs
+            batch_data_args = [{'play_style': ps} for ps in ('recommended', 'aggressive')] * num_40p
+            batch_data_args += [{'play_style': 'sure_bet'}] * num_20p
+            state_pool_generator = pool.imap_unordered(_get_batch_data, batch_data_args, chunksize=pool_size)
+
             for epoch in range(1, epochs + 1):
                 total_loss, total_reward, total_points = 0, 0, 0
 
                 if accumulate_loss:
                     optimizer.zero_grad()
 
-                num_40p = int(0.4 * pool_size)
-                num_20p = int(0.2 * pool_size)
-
-                batch_data_args = [{'play_style': ps} for ps in ('recommended', 'aggressive')] * num_40p
-                batch_data_args += [{'play_style': 'sure_bet'}] * num_20p
-                state_pool = pool.map(_get_batch_data, batch_data_args)
+                state_pool = [next(state_pool_generator) for _ in range(pool_size)]
 
                 for _ in range(batch_size):
                     state = random.choice(state_pool)
@@ -288,7 +289,7 @@ class PeggingTrainer:
                         actual_reward += points
                         rewards.insert(0, actual_reward)
 
-                    loss = torch.tensor(0.0)
+                    loss = torch.tensor(0.0, requires_grad = True)
                     for confidence, reward in zip(action_confs, rewards):
                         if inflate_advantage:
                             reward = reward ** 2

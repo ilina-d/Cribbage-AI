@@ -15,8 +15,7 @@ class DNT_ShallowTanhWide(BaseDiscardNet):
             nn.Tanh(),
             nn.Linear(512, 256),
             nn.Tanh(),
-            nn.Linear(256, self.OUTPUT_SIZE),
-            nn.Sigmoid()
+            nn.Linear(256, self.OUTPUT_SIZE)
         )
 
         self.net.to(self.device)

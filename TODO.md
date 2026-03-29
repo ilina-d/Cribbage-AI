@@ -1,11 +1,11 @@
 # TODO
-- Optimize `PeggingTrainer` with the same method used in `DiscardTrainer`.
-- Implement `PeggingTrainerPreLoaded`.
 - Beautify scoring info when displayed in the terminal.
 
 ---
 # Notes & Ideas
 - Player agents that use neural nets expect a network with preloaded weights.
+- Try training the previously best networks with simple normalized encoder.
+- Try training the previously best networks with the original encoder plus added card worth.
 
 ---
 # Things to Consider
@@ -13,11 +13,14 @@
   output distribution. If the network becomes very confident early on, the random exploration of other actions will stop.
   It might be worth adding an entropy bonus to the loss gradient.
 - Change opponent half-way through training (or when the net reaches a satisfactory point) to Scripted opponent or the net itself.
+- Pegging networks should be RNNs perhaps.
 
 ---
 # Latest Changes
-Added discard training datasets.
+Pegging training updates.
 
-- Added datasets for training discard networks.
-- Added a `Sigmoid()` layer to some discard networks for testing.
-- Minor fix in `DiscardTrainerPreLoaded` logs.
+- Optimized `PeggingTrainer` with the same method implemented in `DiscardTrainer`.
+- Implemented `PeggingTrainerPreloaded`.
+- Added several generated pegging datasets.
+- Added all temporary net structures to pegging_nets for testing.
+- Updated `TODO`.
