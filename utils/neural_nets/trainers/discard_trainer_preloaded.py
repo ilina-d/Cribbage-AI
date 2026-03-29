@@ -86,7 +86,7 @@ class DiscardTrainerPreLoaded:
 
         cls._log(
             f'{discard_network.__class__.__name__} Training Details:\n'
-            f'* Datasets: {", ".join(datasets)}'
+            f'* Datasets: {", ".join(datasets)}\n'
             f'* Learning Rate: {lr}\n'
             f'* Weight Decay: {wd}\n'
             f'* Epochs: {epochs}\n'

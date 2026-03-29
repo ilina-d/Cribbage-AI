@@ -15,7 +15,8 @@ class DNT_ShallowSeluSlim(BaseDiscardNet):
             nn.SELU(),
             nn.Linear(256, 128),
             nn.SELU(),
-            nn.Linear(128, self.OUTPUT_SIZE)
+            nn.Linear(128, self.OUTPUT_SIZE),
+            nn.Sigmoid()
         )
 
         for layer in self.net:

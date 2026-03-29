@@ -16,11 +16,8 @@
 
 ---
 # Latest Changes
-Implemented new discard trainer that works with pre-generated states and other small changes.
+Added discard training datasets.
 
-- Implemented `DiscardTrainerPreLoaded` for training on pre-generated states.
-- Changed how `DiscardTrainer` calculates reward and advantage.
-- Removed card normalization in `SimpleStateEncoder`.
-- Removed `SeededDiscardTrainer`.
-- Minor changes in `DNT_DeepSeluSlim` and `DNT_DeepSeluWide` for testing purposes.
-- Updated TODO.
+- Added datasets for training discard networks.
+- Added a `Sigmoid()` layer to some discard networks for testing.
+- Minor fix in `DiscardTrainerPreLoaded` logs.
