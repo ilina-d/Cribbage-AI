@@ -52,7 +52,7 @@ class Simulator:
     def __init__(self, player1: BasePlayer, player2: BasePlayer, num_simulations: int,
                  measure_performance: bool = True, num_workers: int = 1) -> None:
         """
-        Create a new instance of the DiscardSimulator.
+        Create a new Simulator instance.
 
         ------
 

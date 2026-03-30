@@ -1,4 +1,5 @@
 # TODO
+- Add the best neural networks once all testing is done.
 - Beautify scoring info when displayed in the terminal.
 
 ---
@@ -17,10 +18,11 @@
 
 ---
 # Latest Changes
-Pegging training updates.
+Added greedy discarding players and pegging trainer fixes.
 
-- Optimized `PeggingTrainer` with the same method implemented in `DiscardTrainer`.
-- Implemented `PeggingTrainerPreloaded`.
-- Added several generated pegging datasets.
-- Added all temporary net structures to pegging_nets for testing.
-- Updated `TODO`.
+- Added `DGPNPlayer` and `DGPRPlayer` for faster evaluation of pegging neural networks.
+- Fixed both `PeggingTrainer` and `PeggingTrainerPreLoaded` 
+- Fixed `DAPNPlayer.play_card()` passing too many arguments to the neural network.
+- Removed `pegging_net_v1` and `pegging_net_v2`.
+- Minor doc-string changes.
+- Updated TODO.

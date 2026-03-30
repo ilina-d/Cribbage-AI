@@ -1,7 +1,7 @@
 from utils.assets import Display
 from utils.game import Game
 from utils.simulator import Simulator
-from utils.helpers import DiscardEvaluator, Scoring
+from utils.helpers import DiscardEvaluator, Scoring, StateEncoder
 
 from utils.players import *
 from utils.neural_nets import *
@@ -37,27 +37,29 @@ if __name__ == '__main__':
         'datasets': [
             '100K_states_recommended1'
         ],
-        'lr' : 0.0001, 'wd' : 0.01, 'epochs' : 5_000, 'batch_size' : 10, 'pool_size' : 10,
-        'alpha' : 1, 'alpha_step' : 50, 'alpha_decay' : 0.002, 'opponent' : DAPGPlayer()
+        'lr' : 0.0001, 'wd' : 0.01, 'epochs' : 10_000, 'batch_size' : 10, 'pool_size' : 10,
+        'alpha' : 1, 'alpha_step' : 10, 'alpha_decay' : 0.002, 'opponent' : DAPGPlayer()
     }
 
-    NETS1 = [PNT_DeepLeakySlim, PNT_DeepLeakyWide, PNT_ShallowLeakySlim, PNT_ShallowLeakyWide]
-    NETS2 = [PNT_DeepReluSlim, PNT_DeepReluWide, PNT_ShallowReluSlim, PNT_ShallowReluWide]
-    NETS3 = [PNT_DeepSeluSlim, PNT_DeepSeluWide, PNT_ShallowSeluSlim, PNT_ShallowSeluWide]
-    NETS4 = [PNT_DeepSigmoidSlim, PNT_DeepSigmoidWide, PNT_ShallowSigmoidSlim, PNT_ShallowSigmoidWide]
-    NETS5 = [PNT_DeepTanhSlim, PNT_DeepTanhWide, PNT_ShallowTanhSlim, PNT_ShallowTanhWide]
+    NETS1 = [PNT_DeepReluSlim, PNT_DeepReluWide]
+    NETS2 = [PNT_ShallowReluSlim, PNT_ShallowReluWide]
+    NETS3 = [PNT_DeepSeluSlim, PNT_DeepSeluWide]
+    NETS4 = [PNT_ShallowSeluSlim, PNT_ShallowSeluWide]
+    NETS5 = [PNT_ShallowSigmoidSlim, PNT_ShallowSigmoidWide]
 
-    ENCODER = 'OriginalEncoder'
+    # CONFIG #######################
+    do_inf_adv = False
+    RUNNING_NETS = NETS1
+    ################################
 
-    for net in NETS5:
-        net_name = net.__name__
+    adv_type = 'InfAdv' if do_inf_adv else 'NormAdv'
+    encoder = 'OriginalEncoder' if StateEncoder.LENGTH_CARD_INPUT == 17 else 'SimpleEncoder'
+
+    for net in RUNNING_NETS:
+        file_name = f'DzverTest_{encoder}_{net.__name__}_{adv_type}'
         net = net()
-        PeggingTrainerPreLoaded.train(pegging_network = net, inflate_advantage = True, **TRAINING_ARGS)
-        PeggingTrainerPreLoaded.save(
-            pegging_network = net,
-            file_name = f'DzverTest_{net_name}_InfAdv_{ENCODER}',
-            comment = '/'
-        )
+        PeggingTrainerPreLoaded.train(pegging_network = net, inflate_advantage = do_inf_adv, **TRAINING_ARGS)
+        PeggingTrainerPreLoaded.save(net, file_name, '/')
 
     input('... preventing program from continuing by waiting for input ...\n'
           '... full-screen the terminal before continuing ...')

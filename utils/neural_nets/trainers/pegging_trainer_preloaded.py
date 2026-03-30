@@ -1,5 +1,6 @@
 import json
 import random
+import copy
 
 import torch
 from torch import optim
@@ -30,48 +31,33 @@ def _run_episode(state: dict[str, ...], pegging_net: BasePeggingNet,
     """
 
     called_go = False
-
-    score1 = state['score1']
-    score2 = state['score2']
-    is_dealer = state['is_dealer']
-    player_hand = state['player_hand'].copy()
-    opponent_hand = state['opponent_hand'].copy()
-    starter_card = state['starter_card']
-    cribs = state['cribs']
-    current_crib_idx = state['current_crib_idx']
-    crib_sums = state['crib_sums'].copy()
     player1 = 'Me'
     player2 = opponent
-    player2.cards = opponent_hand
-    alpha = state['alpha']
+    player2.cards = state['opponent_hand']
+    state['dealer'] = player1 if state['is_dealer'] else player2
 
-    current_player = 'Me' if not is_dealer else opponent
+    current_player = 'Me' if not state['is_dealer'] else opponent
     action_confs, action_scores = [], []
+    alpha = state['alpha']
 
     coach = DAPGPlayer()
 
-    while player_hand or opponent_hand:
+    while state['player_hand'] or state['opponent_hand']:
         prev_called_go = called_go
         confidence = None
 
-        reduced_state = {
-            'cribs': cribs, 'current_crib_idx': current_crib_idx, 'crib_sums': crib_sums,
-            'starter_card': starter_card, 'dealer': player1 if is_dealer else player2,
-            'player1': player1, 'player2': player2
-        }
-
         if current_player == 'Me':
-            current_crib_sum = crib_sums[current_crib_idx]
-            current_crib_cards = cribs[current_crib_idx]
+            current_crib_sum = state['crib_sums'][state['current_crib_idx']]
+            current_crib_cards = state['cribs'][state['current_crib_idx']]
             distribution = pegging_net.get_distribution_policy(
-                score1, score2, current_crib_sum, current_crib_cards, player_hand
+                state['score1'], state['score2'], current_crib_sum, current_crib_cards, state['player_hand']
             )
 
             rely_on_coach = random.choices([True, False], [alpha, 1 - alpha], k=1)[0]
             if rely_on_coach:
-                coach.cards = player_hand
+                coach.cards = state['player_hand']
 
-                played_card = coach.play_card(reduced_state)
+                played_card = coach.play_card(state)
                 confidence = pegging_net.get_card_confidence(distribution, played_card)
             else:
                 log_probs = torch.stack([card[1] for card in distribution])
@@ -80,41 +66,41 @@ def _run_episode(state: dict[str, ...], pegging_net: BasePeggingNet,
                 played_card, confidence = distribution[torch.multinomial(probs, 1).item()]
 
             if played_card != 'GO' and not rely_on_coach:
-                player_hand.remove(played_card)
+                state['player_hand'].remove(played_card)
         else:
-            played_card = opponent.play_card(reduced_state)
+            played_card = opponent.play_card(state)
 
         if played_card == 'GO':
             if called_go:
-                current_crib_idx += 1
+                state['current_crib_idx'] += 1
                 called_go = False
             else:
                 called_go = True
                 if current_player == opponent:
-                    score1 += 1
+                    state['score1'] += 1
                 else:
-                    score2 += 1
+                    state['score2'] += 1
 
             if current_player == 'Me':
                 action_confs.append(confidence)
                 action_scores.append(0)
         else:
-            cribs[current_crib_idx].append(played_card)
-            score, _ = Scoring.score_card(state, current_player, update_points=False)
-            crib_sums[current_crib_idx] += CardDeck.get_card_worth(played_card)
+            state['cribs'][state['current_crib_idx']].append(played_card)
+            score, _ = Scoring.score_card(state, current_player, update_points = False)
+            state['crib_sums'][state['current_crib_idx']] += CardDeck.get_card_worth(played_card)
 
             if current_player == 'Me':
                 action_confs.append(confidence)
                 action_scores.append(score)
-                score1 += score
+                state['score1'] += score
             else:
-                score2 += score
+                state['score2'] += score
 
-            if crib_sums[current_crib_idx] == 31:
-                current_crib_idx += 1
+            if state['crib_sums'][state['current_crib_idx']] == 31:
+                state['current_crib_idx'] += 1
                 called_go = False
 
-        if score1 >= 121 or score2 >= 121:
+        if state['score1'] >= 121 or state['score2'] >= 121:
             break
 
         if not (called_go and called_go == prev_called_go):
@@ -186,11 +172,6 @@ class PeggingTrainerPreLoaded:
         optimizer = optim.AdamW(net.parameters(), lr=lr, weight_decay=wd)
         scheduler = optim.lr_scheduler.CosineAnnealingLR(optimizer, T_max=epochs, eta_min=1e-5)
 
-        if pool_size % 5 != 0:
-            cls._log(f'Pool size {pool_size} must be a divisible by 5.')
-            pool_size = round(pool_size / 5) * 5
-            cls._log(f'Pool size changed to {pool_size}.')
-
         cls._log(
             f'{pegging_network.__class__.__name__} Training Details:\n'
             f'* Datasets: {", ".join(datasets)}'
@@ -243,6 +224,7 @@ class PeggingTrainerPreLoaded:
 
             for _ in range(batch_size):
                 state = random.choice(state_pool)
+                state = copy.deepcopy(state)
                 state['alpha'] = alpha
 
                 action_confs, action_pts = _run_episode(state, pegging_network, opponent)

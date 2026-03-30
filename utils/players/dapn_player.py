@@ -4,8 +4,10 @@ from utils.helpers import DiscardEvaluator
 
 
 class DAPNPlayer(BasePlayer):
-    """ Player agent that plays analytically during the discard phase and
-    uses a neural network during the pegging phase. """
+    """
+    Player agent that plays analytically during the discard phase and
+    uses a neural network during the pegging phase.
+    """
 
     def __init__(self, pegging_net: BasePeggingNet, play_style: str = 'recommended') -> None:
         """
@@ -36,12 +38,12 @@ class DAPNPlayer(BasePlayer):
     def play_card(self, state: dict[str, ...]) -> str:
 
         opponent = state['player1'] if self == state['player2'] else state['player2']
-        is_dealer = state['dealer'] == self
         curr_crib_sum = state['crib_sums'][state['current_crib_idx']]
         curr_crib = state['cribs'][state['current_crib_idx']]
 
-        card, _ = self.pegging_net.get_pegging_action(self.points, opponent.points, is_dealer, curr_crib_sum,
-                                                      curr_crib, state['starter_card'], self.cards)
+        card, _ = self.pegging_net.get_pegging_action(
+            self.points, opponent.points, curr_crib_sum, curr_crib, self.cards
+        )
 
         if card != 'GO':
             self.cards.remove(card)
