@@ -4,6 +4,7 @@ from .random_player import *
 from .dapg_player import *
 from .dapn_player import *
 from .dapr_player import *
+from .dgpg_player import *
 from .dgpn_player import *
 from .dgpr_player import *
 from .dnpr_player import *

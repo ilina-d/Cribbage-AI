@@ -1,5 +1,7 @@
 # TODO
 - Add the best neural networks once all testing is done.
+- Combine all player types into one with options for discarding and pegging play styles.
+- Allow usage of both state encoders at the same time.
 - Beautify scoring info when displayed in the terminal.
 
 ---
@@ -18,11 +20,8 @@
 
 ---
 # Latest Changes
-Added greedy discarding players and pegging trainer fixes.
+New player implementation and small fix.
 
-- Added `DGPNPlayer` and `DGPRPlayer` for faster evaluation of pegging neural networks.
-- Fixed both `PeggingTrainer` and `PeggingTrainerPreLoaded` 
-- Fixed `DAPNPlayer.play_card()` passing too many arguments to the neural network.
-- Removed `pegging_net_v1` and `pegging_net_v2`.
-- Minor doc-string changes.
+- Implemented `DGPGPlayer`.
+- Fixed an issue with the `pegging_nets` module trying to import deleted files.
 - Updated TODO.
