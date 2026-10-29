@@ -9,15 +9,15 @@ from utils.neural_nets import *
 
 if __name__ == '__main__':
 
-    input('... preventing program from continuing by waiting for input ...\n'
+    input('... preventing program from starting by waiting for input ...\n'
           '... full-screen the terminal before continuing ...')
 
     game = Game(
-        player1 = UserPlayer(),
+        player1 = DAPGPlayer(),
         player2 = DAPGPlayer(),
         first_dealer = None,
-        wait_after_move = 200,
-        wait_after_info = True,
+        wait_after_move = 500,
+        wait_after_info = False,
         show_opponents_hand = False,
         visuals = True,
         measure_statistics = False
